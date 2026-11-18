@@ -27,9 +27,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
+     * Props shared with every page. Keep secrets out of here - everything is visible to the browser.
      *
      * @return array<string, mixed>
      */
@@ -37,7 +35,14 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            //
+            'auth' => fn () => [
+                'user' => $request->user() ? ['id' => $request->user()->id, 'name' => $request->user()->name, 'email' => $request->user()->email] : null,
+            ],
+            'limits' => fn () => [
+                'max_upload_mb' => (int) (config('hulagwai.upload.max_bytes') / 1048576),
+                'quota_mb' => (int) (config('hulagwai.quota.user_bytes') / 1048576),
+                'extensions' => array_keys(config('hulagwai.upload.extensions')),
+            ],
         ];
     }
 }

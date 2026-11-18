@@ -19,6 +19,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:dGVzdC1rZXktZm9yLXVuaXQtdGVzdHMtb25seS0hISE="/>
+        <env name="ML_SERVICE_TOKEN" value="test-token-test-token-test-token-test-token"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

@@ -1,0 +1,11 @@
+# Runtime dependencies of the HulagwAI ML service (inference only).
+# Install CPU PyTorch first on Windows:  pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pillow>=10.4
+numpy>=1.26
+torch>=2.4
+timm>=1.0
+open_clip_torch>=2.26
+safetensors>=0.4

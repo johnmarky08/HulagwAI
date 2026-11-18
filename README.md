@@ -1,59 +1,121 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# HulagwAI — AI-generated image detection
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> **Húlad** (copy / imitate) + **dágway** (face / form) — _a copy of a form_.
+> Upload an image; HulagwAI predicts whether it is **likely AI-generated, likely real, or inconclusive**, with a confidence score, an explanation and a downloadable PDF report.
 
-## About Laravel
+```
+Browser ──► Laravel 12 (auth, validation, MySQL, encryption, queue, PDF)
+                │  HTTP, loopback only, shared-secret header
+                ▼
+           ML service (Python / FastAPI) ── ensemble: CLIP ViT head + ConvNeXt + frequency MLP
+                                          └─ provenance check: C2PA / IPTC / EXIF / PNG-chunk generator signatures
+```
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Folder                                                | What lives there                         | Who touches it |
+| ----------------------------------------------------- | ---------------------------------------- | -------------- |
+| `app/`, `routes/`, `database/`, `config/hulagwai.php` | Backend (Laravel)                        | backend        |
+| `ml-service/app/`                                     | Inference API + forensics + ensemble     | ML             |
+| `ml-service/training/`                                | Colab training pipeline (.py + notebook) | ML             |
+| `resources/js/api/`                                   | **Frontend API layer** (keep this)       | shared         |
+| `resources/js/Pages`, `Layouts`, `Components`         | **Test UI only — replace freely**        | frontend team  |
+| `docs/`                                               | API, security, datasets                  | everyone       |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 1 · Run it locally (Windows + XAMPP)
 
-## Learning Laravel
+**Requirements:** XAMPP (Apache + MySQL/MariaDB, PHP 8.2), Composer, Node 20+, Python 3.12–3.14.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+# 1. PHP / JS dependencies
+composer install
+composer require barryvdh/laravel-dompdf      # PDF engine for reports (once)
+npm install
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# 2. Environment
+copy .env.example .env
+php artisan key:generate
+```
 
-## Laravel Sponsors
+Edit `.env`:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- start **MySQL** in XAMPP and create the DB: `CREATE DATABASE hulagwai CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+- `DB_USERNAME` / `DB_PASSWORD` (XAMPP default: `root` / empty — fine locally, never in production)
+- `ML_SERVICE_TOKEN` — generate one: `php -r "echo bin2hex(random_bytes(32));"`
 
-### Premium Partners
+```bash
+php artisan migrate
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 3. ML service (Python venv)
+cd ml-service
+python -m venv .venv
+# CPU build of PyTorch (smaller, no GPU needed) - then the rest:
+.\.venv\Scripts\python.exe -m pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-## Contributing
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env          # paste the SAME ML_SERVICE_TOKEN here
+cd ..
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 4. Start everything (web server + queue + scheduler + vite + ML service)
+composer run dev
+```
 
-## Code of Conduct
+Open http://127.0.0.1:8000.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+> **No trained model yet?** With `ML_ALLOW_METADATA_ONLY=true` (default in `ml-service/.env.example`) the service still runs the provenance check
+> (it catches images that _declare_ their AI origin) and answers **Inconclusive** for everything else. Train the model (section 2) to get real predictions.
 
-## Security Vulnerabilities
+> **Python 3.14?** PyTorch publishes 3.14 wheels, but if `pip` cannot find a wheel for another dependency (timm, open_clip, safetensors…), create the venv with Python 3.12 instead.
+> **8 GB RAM:** the default model (`ViT-B-16` + `convnext_tiny`) needs roughly 2 GB while running. Use `--clip-arch ViT-L-14` only on machines with 16 GB+.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Tests: `php artisan test` (backend, 16 tests) · `cd ml-service && pip install -r requirements-dev.txt && pytest` (ML service).
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 2 · Train the model on Google Colab (free GPU)
+
+Your laptop's GPU (AMD Radeon 610M, integrated) cannot train deep models, so training runs on Colab; **the laptop only does inference on CPU**.
+
+1. Upload the `ml-service/` folder (zipped as `ml-service.zip`) to your Google Drive, **or** push the repo to GitHub.
+2. Open `ml-service/training/HulagwAI_Colab.ipynb` in Colab (`File ▸ Upload notebook`, or _Open from GitHub_).
+3. `Runtime ▸ Change runtime type ▸ T4 GPU`.
+4. Add Kaggle credentials: Kaggle ▸ _Settings ▸ API ▸ Create New Token_, then in Colab's 🔑 **Secrets** add `KAGGLE_USERNAME` and `KAGGLE_KEY` (enable _Notebook access_).
+5. Run the cells top to bottom. First do the **smoke test** cell (2–3 min) to prove the pipeline works.
+6. Run the real training cell (`--profile colab_fast`). Expect a few hours on a free T4 (estimate). Everything is saved to Drive and each stage skips itself if finished, so after a disconnect just re-run the cell.
+7. The last cell downloads `hulagwai-ensemble-<version>.zip`. **Unzip it into `ml-service/models/current/`** and run:
+    ```bash
+    cd ml-service && python -m app.verify
+    ```
+8. Restart `composer run dev`. The PDF report now shows real accuracy / precision / recall / F1 / ROC-AUC / MAE / MSE / Brier / log-loss / ECE / confusion matrix / robustness / unseen-generator results.
+
+Prefer the command line? In any Colab cell:
+
+```bash
+!python -m training.run_all --profile colab_fast --work /content/drive/MyDrive/hulagwai_work --version 1.0.0 --with-ood
+```
+
+Details, flags and troubleshooting: [`ml-service/training/README.md`](ml-service/training/README.md). Dataset links & licences: [`docs/DATASETS.md`](docs/DATASETS.md).
+
+---
+
+## 3 · How a decision is made
+
+1. **Provenance check** (always): C2PA/JUMBF containers, IPTC `DigitalSourceType = trainedAlgorithmicMedia`, generator names in EXIF/XMP/PNG text chunks, Stable-Diffusion-WebUI `parameters`, ComfyUI graphs… A declared AI origin lifts the score to ≥ 98 %. _Absence of metadata proves nothing, and camera EXIF is reported but never lowers the score (it can be forged)._
+2. **Three ML members**, each returning a logit:
+    - **CLIP ViT + linear head** — generalises best to generators never seen in training;
+    - **ConvNeXt** fine-tuned on native-resolution crops — catches low-level pixel artefacts;
+    - **Frequency MLP** — spectrum / noise-residual statistics, independent of the other two.
+      Images ≥ 224 px are inspected at **native resolution** (5 crops); resizing would erase the traces being looked for.
+3. **Fusion**: logistic regression fitted on a validation split → probability `P(AI)`.
+4. **Three-way verdict**: _Real_ ≤ `real_max`, _AI_ ≥ `ai_min`, otherwise **Inconclusive**. Thresholds are fitted so that decided calls reach ≥ 97 % precision on validation. The band widens automatically for tiny images or when the members disagree.
+
+The confidence shown to users is _how strongly the model favours its prediction_ — not the probability the image is authentic. Every result says so.
+
+## 4 · Privacy & storage rules
+
+- **Guests** (not signed in): the image is analysed and the encrypted temporary copy is deleted immediately; only the result + a 480 px thumbnail stay in the encrypted server-side session (last 10, gone when the session ends). Nothing is kept in MySQL.
+- **Signed-in users**: originals (≤ 5 MB each, ≤ 50 MB total) are stored **permanently, encrypted** (XChaCha20-Poly1305); filenames and result details are AES-256 encrypted columns. Users can delete one analysis, clear history, or delete the whole account (everything is erased).
+- ⚠️ **Back up `APP_KEY`.** All encryption keys are derived from it; if it is lost, stored images and filenames cannot be decrypted. Decrypt manually with `php artisan hulagwai:decrypt <id> <outfile>`.
+
+More: [`docs/SECURITY.md`](docs/SECURITY.md) (OWASP Top 10 mapping + production checklist) · [`docs/API.md`](docs/API.md) (endpoints for the frontend team).

@@ -22,3 +22,12 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# HulagwAI
+/ml-service/.env
+/ml-service/.venv
+/ml-service/models/current/*
+!/ml-service/models/current/.gitkeep
+/ml-service/work
+/ml-service/**/__pycache__
+.pytest_cache

@@ -1,0 +1,7 @@
+# Used on Google Colab only (see training/README.md). Not needed on your laptop.
+-r requirements.txt
+scikit-learn>=1.5
+pandas>=2.2
+tqdm>=4.66
+requests>=2.32
+kagglehub>=0.3
