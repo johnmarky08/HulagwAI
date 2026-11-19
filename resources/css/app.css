@@ -14,6 +14,43 @@
 html {
     scroll-behavior: smooth;
     scroll-padding-top: 1.5rem;
+    scrollbar-color: #6366f1 #111521;
+    scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar {
+    width: 10px;
+}
+
+html::-webkit-scrollbar-track {
+    background: #111521;
+}
+
+html::-webkit-scrollbar-thumb {
+    border: 2px solid #111521;
+    border-radius: 999px;
+    background: #6366f1;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+    background: #818cf8;
+}
+
+html:has(.app-shell.light-mode) {
+    scrollbar-color: #766244 #f2eee7;
+}
+
+html:has(.app-shell.light-mode)::-webkit-scrollbar-track {
+    background: #f2eee7;
+}
+
+html:has(.app-shell.light-mode)::-webkit-scrollbar-thumb {
+    border-color: #f2eee7;
+    background: #766244;
+}
+
+html:has(.app-shell.light-mode)::-webkit-scrollbar-thumb:hover {
+    background: #5f513b;
 }
 
 .app-shell,
