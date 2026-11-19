@@ -31,3 +31,4 @@ Thumbs.db
 /ml-service/work
 /ml-service/**/__pycache__
 .pytest_cache
+/.venv
