@@ -19,14 +19,14 @@
 
 <Layout active="history">
     <main class="mx-auto min-h-[calc(100vh-80px)] max-w-1240px px-5 pb-16">
-        <div class="mx-auto mb-8 mt-10 max-w-3xl text-center">
+        <div class="mx-auto mb-8 mt-7 max-w-3xl text-left sm:mt-10 sm:text-center">
             <h1
-                class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
+                class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent sm:text-5xl"
             >
-                Analyzing your image
+                Analysis history
             </h1>
             <p class="mt-3 text-sm text-slate-400">
-                Looking for patterns, artifacts, and signs of AI generation.
+                Search, filter, and revisit your previous image analyses.
             </p>
         </div>
         <section class="mb-7 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -65,10 +65,10 @@
             </article>
         </section>
         <div
-            class="mb-6 grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]"
+            class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]"
         >
             <label
-                class="flex h-12 items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4"
+                class="col-span-2 flex h-12 items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 md:col-span-1"
                 ><span class="text-xl text-slate-400">⌕</span><input
                     class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
                     placeholder="Search by filename"
@@ -95,7 +95,7 @@
                 ><option>Last 90 days</option></select
             >
             <button
-                class="h-12 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-5 text-sm font-semibold"
+                class="col-span-2 h-12 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-5 text-sm font-semibold md:col-span-1"
                 onclick={exportHistory}>↓ &nbsp; Export history</button
             >
         </div>
@@ -111,7 +111,7 @@
                 <h2 class="text-lg font-bold">Recent analyses</h2>
                 <span class="text-xs text-slate-400">Newest first</span>
             </div>
-            <div class="mt-4 overflow-x-auto">
+            <div class="mt-4 hidden overflow-x-auto md:block">
                 <table
                     class="w-full min-w-740px border-collapse text-left text-sm"
                 >
@@ -181,6 +181,32 @@
                                 >{/each}{/if}
                     </tbody>
                 </table>
+            </div>
+            <div class="mt-4 grid gap-3 md:hidden">
+                {#if ui.loadingHistory}
+                    <p class="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-center text-sm text-slate-400">Loading history…</p>
+                {:else if ui.rows.length === 0}
+                    <p class="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-center text-sm text-slate-400">No analyses found.</p>
+                {:else}
+                    {#each ui.rows as row (row.id)}
+                        <article class="mobile-history-card flex min-w-0 gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                            <img class="size-14 shrink-0 rounded-lg object-cover" src={row.thumb_url || sampleImage} alt="" />
+                            <div class="min-w-0 flex-1">
+                                <div class="flex min-w-0 items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-semibold">{row.filename}</p>
+                                        <p class="mt-1 text-xs text-slate-400">{formatDate(row.analyzed_at)}</p>
+                                    </div>
+                                    <span class="shrink-0 text-xs text-slate-400">{row.confidence_percent}%</span>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between gap-2">
+                                    <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase" class:bg-rose-950={row.verdict === "ai_generated"} class:text-rose-400={row.verdict === "ai_generated"} class:bg-emerald-950={row.verdict === "real"} class:text-emerald-400={row.verdict === "real"} class:bg-amber-950={row.verdict === "inconclusive"} class:text-amber-400={row.verdict === "inconclusive"}>{row.label}</span>
+                                    <a use:inertia class="text-xs font-semibold text-indigo-300" href={"/detect?analysis=" + row.id}>View result ›</a>
+                                </div>
+                            </div>
+                        </article>
+                    {/each}
+                {/if}
             </div>
             <div
                 class="flex flex-col gap-3 px-2 pb-2 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between"
