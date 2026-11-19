@@ -46,6 +46,9 @@ export const ui = $state({
     progress: 0,
     steps: [],
     light: false,
+    scanBarActive: false,
+    scanBarAtEnd: false,
+    scanTransitioning: false,
     search: "",
     verdictFilter: "All results",
     dateFilter: "All time",
@@ -126,8 +129,9 @@ function setFinalAnalysis(payload) {
 }
 
 export function toggleTheme() {
-    scanThemeChange();
-    ui.light = !ui.light;
+    void scanThemeChange(ui, () => {
+        ui.light = !ui.light;
+    });
 }
 
 export function selectFile(file) {

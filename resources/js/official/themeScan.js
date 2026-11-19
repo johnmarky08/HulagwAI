@@ -1,28 +1,54 @@
-const SCAN_DURATION = 980;
+import { tick } from "svelte";
 
-export function scanThemeChange() {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+const SCAN_DURATION = 680;
 
-    const app = document.querySelector(".app-shell");
-    if (!app) return;
+export async function scanThemeChange(state, applyThemeChange) {
+    if (state.scanTransitioning) return;
 
-    document.querySelectorAll(".mode-scan-overlay").forEach((overlay) => overlay.remove());
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+        applyThemeChange();
+        return;
+    }
 
-    const bounds = app.getBoundingClientRect();
-    const overlay = document.createElement("div");
-    overlay.className = "mode-scan-overlay";
-    overlay.setAttribute("aria-hidden", "true");
-    overlay.style.setProperty("--scan-duration", `${SCAN_DURATION}ms`);
+    if (typeof document.startViewTransition !== "function") {
+        state.scanBarActive = true;
+        state.scanBarAtEnd = false;
+        await tick();
+        applyThemeChange();
+        state.scanBarAtEnd = true;
+        window.setTimeout(() => {
+            state.scanBarActive = false;
+            state.scanBarAtEnd = false;
+        }, SCAN_DURATION);
+        return;
+    }
 
-    const snapshot = app.cloneNode(true);
-    snapshot.classList.add("mode-scan-snapshot");
-    snapshot.querySelector(".route-page")?.classList.remove("route-page");
-    snapshot.style.left = `${bounds.left}px`;
-    snapshot.style.top = `${bounds.top}px`;
-    snapshot.style.width = `${bounds.width}px`;
-    overlay.append(snapshot);
-    document.body.append(overlay);
+    state.scanTransitioning = true;
+    state.scanBarActive = true;
+    state.scanBarAtEnd = false;
+    await tick();
 
-    overlay.addEventListener("animationend", () => overlay.remove(), { once: true });
-    window.setTimeout(() => overlay.remove(), SCAN_DURATION + 120);
+    let themeApplied = false;
+    const applyTheme = () => {
+        if (themeApplied) return;
+        themeApplied = true;
+        applyThemeChange();
+        state.scanBarAtEnd = true;
+    };
+
+    try {
+        const transition = document.startViewTransition(async () => {
+            applyTheme();
+            await tick();
+        });
+        await transition.finished;
+    } catch {
+        // If the transition is interrupted, still apply the requested theme.
+        applyTheme();
+    } finally {
+        state.scanBarActive = false;
+        state.scanBarAtEnd = false;
+        state.scanTransitioning = false;
+    }
 }

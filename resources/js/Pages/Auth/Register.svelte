@@ -1,27 +1,133 @@
 <script>
-    import Layout from "../../Layouts/TestLayout.svelte";
-    import { auth } from "../../api/auth";
-    import { errorMessage } from "../../api/client";
-
-    let name = $state(""), email = $state(""), password = $state(""), confirm = $state(""), error = $state(""), busy = $state(false);
-    async function submit(e) {
-        e.preventDefault(); busy = true; error = "";
-        try {
-            await auth.register(name, email, password, confirm);
-            location.href = "/";
-        } catch (err) { error = errorMessage(err); } finally { busy = false; }
-    }
+    import { inertia } from "@inertiajs/svelte";
+    import Layout from "../Components/Layout.svelte";
+    import {
+        registerForm as form,
+        submitRegister,
+        toggleRegisterPassword,
+    } from "../../official/authPages.svelte.js";
 </script>
 
-<Layout>
-    <h1 class="mb-4 text-3xl font-bold">Create account</h1>
-    <p class="mb-4 text-sm text-slate-400">Accounts are optional. Without one, your results live in this browser session only.</p>
-    {#if error}<div class="mb-3 rounded border border-red-500 bg-red-950 p-2 text-red-200">{error}</div>{/if}
-    <form class="flex max-w-sm flex-col gap-3" onsubmit={submit}>
-        <input class="rounded border border-slate-700 bg-slate-900 px-3 py-2" placeholder="Name" bind:value={name} autocomplete="name" required />
-        <input class="rounded border border-slate-700 bg-slate-900 px-3 py-2" type="email" placeholder="Email" bind:value={email} autocomplete="email" required />
-        <input class="rounded border border-slate-700 bg-slate-900 px-3 py-2" type="password" placeholder="Password" bind:value={password} autocomplete="new-password" required />
-        <input class="rounded border border-slate-700 bg-slate-900 px-3 py-2" type="password" placeholder="Confirm password" bind:value={confirm} autocomplete="new-password" required />
-        <button class="rounded bg-indigo-600 px-4 py-2 font-semibold disabled:opacity-50" disabled={busy}>Sign up</button>
-    </form>
+<svelte:head><title>HulagwAI · Create account</title></svelte:head>
+<Layout active="">
+    <main class="grid min-h-[calc(100vh-80px)] place-items-center px-5 py-12">
+        <div class="w-full max-w-480px">
+            <section
+                class="rounded-2xl border border-slate-800 bg-slate-900/70 p-7 shadow-2xl shadow-black/20 sm:p-8"
+            >
+                <h1 class="text-3xl font-extrabold tracking-tight">
+                    Save your analysis history
+                </h1>
+                <p class="mt-2 text-sm text-slate-400">
+                    Create a free account to keep your results in one place.
+                </p>
+                <div class="mt-6 grid gap-3">
+                    <button
+                        type="button"
+                        disabled
+                        class="rounded-xl border border-slate-700 bg-slate-800/70 px-4 py-3 text-sm text-slate-300 opacity-80"
+                        title="Social login is in development"
+                        >🌐 &nbsp; Continue with Google <span
+                            class="ml-2 text-[10px] text-indigo-300"
+                            >In Development</span
+                        ></button
+                    >
+                    <button
+                        type="button"
+                        disabled
+                        class="rounded-xl border border-slate-700 bg-slate-800/70 px-4 py-3 text-sm text-slate-300 opacity-80"
+                        title="Social login is in development"
+                        >▦ &nbsp; Continue with Microsoft <span
+                            class="ml-2 text-[10px] text-indigo-300"
+                            >In Development</span
+                        ></button
+                    >
+                </div>
+                <div
+                    class="my-6 flex items-center gap-3 text-xs text-slate-500"
+                >
+                    <span class="h-px flex-1 bg-slate-800"></span>or continue
+                    with email<span class="h-px flex-1 bg-slate-800"></span>
+                </div>
+                {#if form.error}<p
+                        class="mb-4 rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-300"
+                        role="alert"
+                    >
+                        {form.error}
+                    </p>{/if}
+                <form class="space-y-4" onsubmit={submitRegister}>
+                    <label class="block text-sm font-medium"
+                        >Name<input
+                            class="auth-input mt-2 block w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                            placeholder="Your name"
+                            bind:value={form.name}
+                            autocomplete="name"
+                            required
+                        /></label
+                    >
+                    <label class="block text-sm font-medium"
+                        >Email<input
+                            class="auth-input mt-2 block w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                            type="email"
+                            placeholder="you@example.com"
+                            bind:value={form.email}
+                            autocomplete="email"
+                            required
+                        /></label
+                    >
+                    <label class="block text-sm font-medium"
+                        >Password<span class="relative mt-2 block"
+                            ><input
+                                class="auth-input w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 pr-14 text-sm text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                                type={form.showPassword ? "text" : "password"}
+                                placeholder="Create a password"
+                                bind:value={form.password}
+                                autocomplete="new-password"
+                                required
+                                minlength="8"
+                            /><button
+                                type="button"
+                                class="absolute inset-y-0 right-3 text-xs text-slate-400 hover:text-indigo-300"
+                                onclick={toggleRegisterPassword}
+                                aria-label={form.showPassword
+                                    ? "Hide password"
+                                    : "Show password"}
+                                >{form.showPassword ? "Hide" : "Show"}</button
+                            ></span
+                        ><span class="mt-1 block text-xs text-slate-500"
+                            >Use at least 8 characters.</span
+                        ></label
+                    >
+                    <button
+                        class="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
+                        disabled={form.busy}
+                        >{form.busy
+                            ? "Creating account…"
+                            : "Create account"}</button
+                    >
+                </form>
+                <p class="mt-4 text-center text-xs leading-5 text-slate-500">
+                    By creating an account, you agree to our Terms of Service
+                    and Privacy Policy.
+                </p>
+                <p class="mt-6 text-center text-sm text-slate-400">
+                    Already have an account? <a
+                        use:inertia
+                        class="font-semibold text-white underline decoration-indigo-400 underline-offset-4 hover:text-indigo-300"
+                        href="/login">Log in</a
+                    >
+                </p>
+            </section>
+            <div class="mt-6 text-center">
+                <a
+                    use:inertia
+                    class="text-sm text-slate-400 underline underline-offset-4 transition hover:text-indigo-300"
+                    href="/detect">Continue without an account</a
+                >
+                <p class="mt-2 text-xs text-slate-500">
+                    An account is only needed to save your history.
+                </p>
+            </div>
+        </div>
+    </main>
 </Layout>

@@ -5,7 +5,7 @@
 
 <footer class="theme-footer border-t border-indigo-500/50 bg-[#111521]">
     <div
-        class="mx-auto grid max-w-[1440px] gap-8 px-6 py-8 md:grid-cols-2 md:px-12"
+        class="mx-auto grid max-w-1440px gap-8 px-6 py-8 md:grid-cols-2 md:px-12"
     >
         <div>
             <a
@@ -25,11 +25,17 @@
             class="grid grid-cols-2 gap-3 text-sm text-slate-300"
             aria-label="Footer navigation"
         >
-            {#each navigation as item}<a
-                    use:inertia
-                    class="hover:text-indigo-300"
-                    href={item.href}>{item.label}</a
-                >{/each}
+            {#each navigation as item}
+                {#if item.id === "about"}<a
+                        class="hover:text-indigo-300"
+                        href={item.href}>{item.label}</a
+                    >
+                {:else}<a
+                        use:inertia
+                        class="hover:text-indigo-300"
+                        href={item.href}>{item.label}</a
+                    >{/if}
+            {/each}
             <a use:inertia class="hover:text-indigo-300" href="/#how-it-works"
                 >How It Works</a
             >

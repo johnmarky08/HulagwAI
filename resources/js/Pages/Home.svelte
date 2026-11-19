@@ -12,9 +12,9 @@
 </svelte:head>
 
 <Layout active="home">
-    <main class="mx-auto max-w-[1440px]">
+    <main class="mx-auto max-w-1440px">
         <section
-            class="scroll-reveal grid min-h-[470px] items-center gap-8 px-6 py-14 md:grid-cols-2 md:px-16 lg:min-h-[485px]"
+            class="scroll-reveal grid min-h-470px items-center gap-8 px-6 py-28 md:grid-cols-2 md:px-16 lg:min-h-485px"
         >
             <div>
                 <p
@@ -51,14 +51,14 @@
                 </div>
             </div>
             <div
-                class="hero-art relative mx-auto grid h-[320px] w-full max-w-xl place-items-center"
+                class="hero-art relative mx-auto grid h-320px w-full max-w-xl place-items-center"
                 aria-label="Illustration of an image being analyzed"
             >
                 <div
                     class="hero-glow absolute h-56 w-72 rounded-full bg-indigo-600/30 blur-3xl"
                 ></div>
                 <div
-                    class="hero-image relative h-52 w-80 -rotate-2 rounded-3xl bg-linear-to-br from-violet-500 via-indigo-800 to-blue-950 p-2 shadow-[0_0_45px_#5145e899] sm:w-[390px]"
+                    class="hero-image relative h-52 w-80 -rotate-2 rounded-3xl bg-linear-to-br from-violet-500 via-indigo-800 to-blue-950 p-2 shadow-[0_0_45px_#5145e899] sm:w-390px"
                 >
                     <div
                         class="relative h-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_72%_28%,#ffd68e_0,#d89b8a_13%,transparent_29%),radial-gradient(circle_at_27%_75%,#3e63dd_0,#4d59d2_25%,transparent_47%),linear-gradient(130deg,#555bd4,#141a4c_78%)]"
@@ -122,7 +122,10 @@
             </div>
         </section>
 
-        <section class="scroll-reveal border-t border-indigo-500/60 px-6 py-12 md:px-16">
+        <section
+            id="about"
+            class="scroll-reveal border-t border-indigo-500/60 px-6 py-12 md:px-16"
+        >
             <div class="mb-8 text-center">
                 <h2
                     class="text-4xl font-extrabold tracking-tight text-indigo-400"
@@ -186,28 +189,60 @@
             </div>
         </section>
 
-        <section class="scroll-reveal border-t border-indigo-500/30 px-6 py-12 md:px-16">
+        <section
+            class="scroll-reveal border-t border-indigo-500/30 px-6 py-12 md:px-16"
+        >
             <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
-                <h2 class="text-4xl font-extrabold tracking-tight text-indigo-400">The developers</h2>
-                <p class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Suggested roles · names to be added</p>
+                <h2
+                    class="text-4xl font-extrabold tracking-tight text-indigo-400"
+                >
+                    The Developers
+                </h2>
+                <p
+                    class="text-[10px] font-medium uppercase tracking-wide text-slate-500"
+                >
+                    Suggested roles · names to be added
+                </p>
             </div>
             <div class="grid gap-5 md:grid-cols-3">
-                {#each [
-                    { number: "01", name: "Joshua Bartolome", role: "Frontend developer", description: "Builds the upload experience, result views, and responsive interface." },
-                    { number: "02", name: "John Marky Natividad", role: "Backend developer", description: "Connects analysis requests, stores results, and supports analysis history." },
-                    { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Develops image classification, confidence scoring, and model evaluation." },
-                ] as developer}
-                    <article class="rounded-2xl border border-indigo-500/40 bg-slate-900 p-6">
-                        <span class="text-xs font-bold text-indigo-400">{developer.number}</span>
-                        <div class="developer-avatar mx-auto my-5 grid size-20 place-items-center rounded-full border border-indigo-400/50 bg-indigo-950/70 ring-4 ring-indigo-500/10" aria-hidden="true">
-                            <svg class="size-9 text-indigo-300" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.7" />
-                                <path d="M5.5 20c.5-3.2 2.8-5 6.5-5s6 1.8 6.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                {#each [{ number: "01", name: "Joshua Bartolome", role: "Frontend developer", description: "Builds the upload experience, result views, and responsive interface." }, { number: "02", name: "John Marky Natividad", role: "Backend developer", description: "Connects analysis requests, stores results, and supports analysis history." }, { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project." }] as developer}
+                    <article
+                        class="rounded-2xl border border-indigo-500/40 bg-slate-900 p-6"
+                    >
+                        <span class="text-xs font-bold text-indigo-400"
+                            >{developer.number}</span
+                        >
+                        <div
+                            class="developer-avatar mx-auto my-5 grid size-20 place-items-center rounded-full border border-indigo-400/50 bg-indigo-950/70 ring-4 ring-indigo-500/10"
+                            aria-hidden="true"
+                        >
+                            <svg
+                                class="size-9 text-indigo-300"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                            >
+                                <circle
+                                    cx="12"
+                                    cy="8"
+                                    r="3.5"
+                                    stroke="currentColor"
+                                    stroke-width="1.7"
+                                />
+                                <path
+                                    d="M5.5 20c.5-3.2 2.8-5 6.5-5s6 1.8 6.5 5"
+                                    stroke="currentColor"
+                                    stroke-width="1.7"
+                                    stroke-linecap="round"
+                                />
                             </svg>
                         </div>
                         <h3 class="mt-3 text-xl font-bold">{developer.name}</h3>
-                        <p class="mt-1 text-sm font-semibold text-indigo-300">{developer.role}</p>
-                        <p class="mt-4 text-sm leading-6 text-slate-400">{developer.description}</p>
+                        <p class="mt-1 text-sm font-semibold text-indigo-300">
+                            {developer.role}
+                        </p>
+                        <p class="mt-4 text-sm leading-6 text-slate-400">
+                            {developer.description}
+                        </p>
                     </article>
                 {/each}
             </div>

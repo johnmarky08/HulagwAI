@@ -16,7 +16,7 @@
 <svelte:head><title>HulagwAI · Image Detection</title></svelte:head>
 
 <Layout active="detect">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-[1240px] px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-1240px px-5 pb-16">
         <div class="scroll-reveal mx-auto mb-8 mt-10 max-w-3xl text-center">
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
@@ -39,7 +39,7 @@
         >
             {#each ["Upload", "Analyze", "Results"] as label, index}
                 <div
-                    class="flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold text-slate-400 sm:min-w-40 sm:gap-3 sm:text-base"
+                    class="flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold text-black sm:min-w-40 sm:gap-3 sm:text-base"
                     class:bg-indigo-800={index ===
                         (ui.phase === "upload"
                             ? 0
@@ -71,7 +71,7 @@
 
         {#if ui.error}
             <section
-                class="flex min-h-[480px] flex-col items-center justify-center rounded-2xl border border-red-500 bg-rose-400 px-6 py-12 text-center text-white"
+                class="flex min-h-480px flex-col items-center justify-center rounded-2xl border border-red-500 bg-rose-400 px-6 py-12 text-center text-white"
             >
                 <span
                     class="mb-3 grid size-16 place-items-center rounded-2xl bg-red-500 text-4xl shadow-lg shadow-red-600/40"
@@ -96,7 +96,7 @@
             </section>
         {:else if ui.phase === "upload" && !ui.file}
             <label
-                class="upload-dropzone scroll-reveal flex min-h-[420px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-indigo-500 bg-indigo-950/40 px-6 py-12 text-center transition hover:bg-indigo-950/70 sm:min-h-[590px]"
+                class="upload-dropzone scroll-reveal flex min-h-420px cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-indigo-500 bg-indigo-950/40 px-6 py-12 text-center transition hover:bg-indigo-950/70 sm:min-h-590px"
                 ondragover={allowDrop}
                 ondrop={handleFileDrop}
             >
@@ -117,13 +117,20 @@
                     class="mt-5 inline-flex rounded-xl bg-linear-to-br from-indigo-500 to-indigo-700 px-8 py-4 font-semibold text-white"
                     >⇧ &nbsp; Upload Image</span
                 ><span class="mt-5 flex gap-1 text-[9px] text-slate-400"
-                    ><i class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic">JPG</i
-                    ><i class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
+                    ><i
+                        class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
+                        >JPG</i
+                    ><i
+                        class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
                         >JPEG</i
-                    ><i class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic">PNG</i
-                    ><i class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
+                    ><i
+                        class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
+                        >PNG</i
+                    ><i
+                        class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
                         >WEBP</i
-                    ><i class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
+                    ><i
+                        class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
                         >Max 5 MB</i
                     ></span
                 >
@@ -133,7 +140,7 @@
                 class="upload-selected scroll-reveal rounded-2xl border border-indigo-500 bg-indigo-950/40 p-4 shadow-xl shadow-indigo-950/40 sm:p-6"
             >
                 <img
-                    class="upload-preview max-h-[440px] w-full rounded-xl bg-slate-950 object-contain"
+                    class="upload-preview max-h-440px w-full rounded-xl bg-slate-950 object-contain"
                     src={ui.preview}
                     alt="Selected upload preview"
                 />
@@ -174,7 +181,7 @@
                     class="rounded-2xl border border-indigo-500/50 bg-slate-900 p-4"
                 >
                     <img
-                        class="h-[300px] w-full rounded-xl object-cover"
+                        class="h-300px w-full rounded-xl object-cover"
                         src={ui.preview || ui.resultPreview}
                         alt="Analysis in progress"
                     />

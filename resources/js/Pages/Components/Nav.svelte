@@ -1,9 +1,21 @@
 <script>
     import { inertia } from "@inertiajs/svelte";
     import { navigation } from "../../official/navigation.js";
+    import { onMount } from "svelte";
+    import { auth } from "../../api/auth";
+    import moonIcon from "../../../images/moon.svg";
+    import sunIcon from "../../../images/sun.svg";
     import { ui, toggleTheme } from "../../official/controller.svelte.js";
 
     let { active = "home" } = $props();
+    let me = $state(null);
+    onMount(async () => {
+        try {
+            me = await auth.me();
+        } catch {
+            me = null;
+        }
+    });
 </script>
 
 <header
@@ -31,25 +43,35 @@
                     use:inertia
                     href={item.href}
                     aria-current={active === item.id ? "page" : undefined}
-                    class="nav-link inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-3 text-sm text-slate-400 md:min-w-28 md:px-5"
+                    class="hover:text-white nav-link inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-3 text-sm font-bold text-slate-400 md:min-w-28 md:px-5 transition-all duration-300 ease-in-out"
                     >{item.label}</a
                 >
             {/each}
         </nav>
+        <a
+            use:inertia
+            href={me?.authenticated ? "/profile" : "/login"}
+            class="hidden shrink-0 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm font-medium transition hover:border-indigo-400 hover:bg-indigo-950/70 sm:inline-flex"
+            >♙ &nbsp;{me?.authenticated ? "Profile" : "Log in"}</a
+        >
         <button
-            class="flex shrink-0 items-center gap-3 rounded-full px-1 py-2 text-2xl"
+            class="theme-toggle flex size-11 shrink-0 items-center justify-center rounded-full"
             onclick={toggleTheme}
-            aria-label="Toggle color theme"
+            aria-label={ui.light
+                ? "Switch to dark mode"
+                : "Switch to light mode"}
             aria-pressed={ui.light}
         >
-            <span>☼</span><span
-                class="relative h-6 w-11 rounded-full bg-indigo-600"
-                ><span
-                    class="absolute top-1 size-4 rounded-full bg-slate-950 transition-all"
-                    class:left-1={ui.light}
-                    class:right-1={!ui.light}
-                ></span></span
+            <span
+                class="grid size-9 cursor-pointer place-items-center rounded-full border border-indigo-400/30 bg-indigo-500/10"
             >
+                <img
+                    src={ui.light ? sunIcon : moonIcon}
+                    alt=""
+                    class="theme-icon size-6 transition-transform duration-300 ease-in-out"
+                    class:rotate-180={ui.light}
+                />
+            </span>
         </button>
     </div>
 </header>
