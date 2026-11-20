@@ -11,17 +11,27 @@
     let { active = "home" } = $props();
     // Signed-in state comes from the shared session cache, so the username shows at once on navigation.
     let me = $derived(session.value);
-    let accountLabel = $derived(me === undefined ? "Account" : me.authenticated ? (me.user?.name || "Account") : "Log in");
-    let accountHref = $derived(me === undefined || me.authenticated ? "/profile" : "/login");
+    let accountLabel = $derived(
+        me === undefined
+            ? "Account"
+            : me.authenticated
+              ? me.user?.name || "Account"
+              : "Log in",
+    );
+    let accountHref = $derived(
+        me === undefined || me.authenticated ? "/profile" : "/login",
+    );
     let menuOpen = $state(false);
 
     onMount(() => {
         const updateUser = (event) => {
-            if (session.value?.user) session.value = { ...session.value, user: event.detail };
+            if (session.value?.user)
+                session.value = { ...session.value, user: event.detail };
         };
         window.addEventListener("hulagwai:profile-updated", updateUser);
         void refreshSession();
-        return () => window.removeEventListener("hulagwai:profile-updated", updateUser);
+        return () =>
+            window.removeEventListener("hulagwai:profile-updated", updateUser);
     });
 
     function closeMenu() {
@@ -125,7 +135,7 @@
         <div
             id="mobile-main-menu"
             transition:fly={flyTransition(-14, 220)}
-            class="font-bold mobile-menu absolute inset-x-0 top-full z-50 border-b border-indigo-500/40 bg-[#111521] px-5 pb-5 pt-3 shadow-2xl md:hidden"
+            class=" font-bold mobile-menu absolute inset-x-0 top-full z-50 border-b border-indigo-500/40 bg-[#111521] px-5 pb-5 pt-3 shadow-2xl md:hidden"
         >
             <nav class="grid gap-1" aria-label="Mobile navigation">
                 {#each navigation as item, index}

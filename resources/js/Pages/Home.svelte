@@ -6,6 +6,8 @@
     import TechStackCarousel from "./Components/TechStackCarousel.svelte";
     import { session, refreshSession } from "../api/session.svelte.js";
     import { loginForm } from "../official/authPages.svelte.js";
+    import josh from "../../images/Joshua.jpg";
+    import nico from "../../images/nico.png";
 
     let loginOpen = $state(false);
 
@@ -68,7 +70,10 @@
                             href="/detect"><span>↑</span> Analyze Image</a
                         >
                     {:else if session.value === undefined}
-                        <span class="h-11 w-40 rounded-xl border border-slate-800 bg-slate-800/50" aria-hidden="true"></span>
+                        <span
+                            class="h-11 w-40 rounded-xl border border-slate-800 bg-slate-800/50"
+                            aria-hidden="true"
+                        ></span>
                     {:else}
                         <button
                             type="button"
@@ -226,18 +231,17 @@
         >
             <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
                 <h2
-                    class="text-4xl font-extrabold tracking-tight text-indigo-400"
+                    class="text-center text-4xl font-extrabold tracking-tight text-indigo-400"
                 >
-                    The Developers
+                    Developers
                 </h2>
-                <p
-                    class="text-[10px] font-medium uppercase tracking-wide text-slate-500"
-                >
-                    Suggested roles · names to be added
-                </p>
             </div>
             <div class="grid gap-5 md:grid-cols-3">
-                {#each [{ number: "01", name: "Joshua Bartolome", role: "Frontend developer", description: "Builds the upload experience, result views, and responsive interface." }, { number: "02", name: "John Marky Natividad", role: "Backend developer", description: "Connects analysis requests, stores results, and supports analysis history." }, { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project." }] as developer}
+                {#each [
+                { number: "01", name: "Joshua Bartolome", role: "Frontend developer", description: "Builds the upload experience, result views, and responsive interface.", img: josh }, 
+                { number: "02", name: "John Marky Natividad", role: "Backend developer", description: "Connects analysis requests, stores results, and supports analysis history." }, 
+                { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project.", img: nico }
+                ] as developer}
                     <article
                         class="rounded-2xl border border-indigo-500/40 bg-slate-900 p-6"
                     >
@@ -245,31 +249,44 @@
                             >{developer.number}</span
                         >
                         <div
-                            class="developer-avatar mx-auto my-5 grid size-20 place-items-center rounded-full border border-indigo-400/50 bg-indigo-950/70 ring-4 ring-indigo-500/10"
+                            class="developer-avatar mx-auto my-5 grid size-20 place-items-center overflow-hidden rounded-full border border-indigo-400/50 bg-indigo-950/70 ring-4 ring-indigo-500/10"
                             aria-hidden="true"
                         >
-                            <svg
-                                class="size-9 text-indigo-300"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                            >
-                                <circle
-                                    cx="12"
-                                    cy="8"
-                                    r="3.5"
-                                    stroke="currentColor"
-                                    stroke-width="1.7"
+                            {#if developer.img}
+                                <img
+                                    src={developer.img}
+                                    alt={developer.name}
+                                    class="size-20 rounded-full object-cover object-center"
+                                    loading="lazy"
                                 />
-                                <path
-                                    d="M5.5 20c.5-3.2 2.8-5 6.5-5s6 1.8 6.5 5"
-                                    stroke="currentColor"
-                                    stroke-width="1.7"
-                                    stroke-linecap="round"
-                                />
-                            </svg>
+                            {:else}
+                                <svg
+                                    class="size-9 text-indigo-300"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                >
+                                    <circle
+                                        cx="12"
+                                        cy="8"
+                                        r="3.5"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"
+                                    />
+                                    <path
+                                        d="M5.5 20c.5-3.2 2.8-5 6.5-5s6 1.8 6.5 5"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"
+                                        stroke-linecap="round"
+                                    />
+                                </svg>
+                            {/if}
                         </div>
-                        <h3 class="mt-3 text-xl font-bold">{developer.name}</h3>
-                        <p class="mt-1 text-sm font-semibold text-indigo-300">
+                        <h3 class="mt-3 text-xl font-bold text-center">
+                            {developer.name}
+                        </h3>
+                        <p
+                            class="text-center mt-1 text-sm font-semibold text-indigo-300"
+                        >
                             {developer.role}
                         </p>
                         <p class="mt-4 text-sm leading-6 text-slate-400">
