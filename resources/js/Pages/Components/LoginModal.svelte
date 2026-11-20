@@ -1,5 +1,6 @@
 <script>
     import { onMount } from "svelte";
+    import GoogleSignInButton from "./GoogleSignInButton.svelte";
     import { inertia } from "@inertiajs/svelte";
     import {
         loginForm as form,
@@ -34,6 +35,11 @@
         <span class="inline-flex rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[.14em] text-indigo-300">Welcome back</span>
         <h2 id="login-dialog-title" class="mt-4 text-2xl font-extrabold text-white">Log in to HulagwAI</h2>
         <p class="mt-2 pr-5 text-sm leading-6 text-slate-400">Sign in to save your scans and revisit your analysis history.</p>
+
+        <div class="mt-6">
+            <GoogleSignInButton />
+        </div>
+        <div class="my-6 flex items-center gap-3 text-xs text-slate-500"><span class="h-px flex-1 bg-slate-800"></span>or continue with email<span class="h-px flex-1 bg-slate-800"></span></div>
 
         {#if form.error}
             <p class="mt-5 rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-300" role="alert">{form.error}</p>

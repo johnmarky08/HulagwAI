@@ -806,13 +806,12 @@ html:has(.app-shell.light-mode)::-webkit-scrollbar-thumb:hover {
     :root {
         overflow-x: hidden;
     }
+    /* clip (not hidden) on body: hidden makes body a scroll container and breaks the sticky header. */
     body {
-        overflow-x: hidden;
+        overflow-x: clip;
     }
-    .theme-header {
-        position: -webkit-sticky;
-        position: sticky;
-        top: 0;
+    .app-shell {
+        overflow-x: clip;
     }
     .mobile-menu {
         max-height: calc(100dvh - 76px);

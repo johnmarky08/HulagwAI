@@ -1,4 +1,5 @@
 <script>
+    import GoogleSignInButton from "../Components/GoogleSignInButton.svelte";
     import { inertia } from "@inertiajs/svelte";
     import Layout from "../Components/Layout.svelte";
     import {
@@ -11,7 +12,7 @@
 <svelte:head><title>HulagwAI · Create account</title></svelte:head>
 <Layout active="">
     <main class="grid min-h-[calc(100vh-80px)] place-items-center px-5 py-12">
-        <div class="w-full max-w-480px">
+        <div class="w-full max-w-[480px]">
             <section
                 class="rounded-2xl border border-slate-800 bg-slate-900/70 p-7 shadow-2xl shadow-black/20 sm:p-8"
             >
@@ -21,27 +22,8 @@
                 <p class="mt-2 text-sm text-slate-400">
                     Create a free account to keep your results in one place.
                 </p>
-                <div class="mt-6 grid gap-3">
-                    <button
-                        type="button"
-                        disabled
-                        class="rounded-xl border border-slate-700 bg-slate-800/70 px-4 py-3 text-sm text-slate-300 opacity-80"
-                        title="Social login is in development"
-                        >🌐 &nbsp; Continue with Google <span
-                            class="ml-2 text-[10px] text-indigo-300"
-                            >In Development</span
-                        ></button
-                    >
-                    <button
-                        type="button"
-                        disabled
-                        class="rounded-xl border border-slate-700 bg-slate-800/70 px-4 py-3 text-sm text-slate-300 opacity-80"
-                        title="Social login is in development"
-                        >▦ &nbsp; Continue with Microsoft <span
-                            class="ml-2 text-[10px] text-indigo-300"
-                            >In Development</span
-                        ></button
-                    >
+                <div class="mt-6">
+                    <GoogleSignInButton />
                 </div>
                 <div
                     class="my-6 flex items-center gap-3 text-xs text-slate-500"

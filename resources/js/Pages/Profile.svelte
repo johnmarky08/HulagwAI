@@ -91,7 +91,7 @@
                 <h2 class="text-base font-bold text-slate-100">Connected accounts</h2>
                 <p class="mt-1 text-xs text-slate-400">A quicker way to log in to your history.</p>
                 <div class="mt-5 space-y-4">
-                    {#each [{ name: "Google", mark: "G", classes: "text-emerald-400" }, { name: "Microsoft", mark: "▦", classes: "text-sky-400" }] as provider}
+                    {#each [{ name: "Google", mark: "G", classes: "text-emerald-400" }] as provider}
                         <div class="flex items-center justify-between gap-4">
                             <span class="flex items-center gap-3">
                                 <span class="grid size-8 place-items-center text-xl font-bold {provider.classes}" aria-hidden="true">{provider.mark}</span>
