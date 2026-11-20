@@ -245,13 +245,63 @@ def check_balance(df: pd.DataFrame, report_path) -> None:
     log.info("balance check passed (real = AI in every source and split): %s", rep["per_split"])
 
 
+# ------------------------------------------------------------------------------------------- Kaggle (robust)
+def _is_network_error(e: BaseException) -> bool:
+    """Timeouts / dropped connections / 429 / 5xx - worth retrying. 404, auth errors and local file errors are not."""
+    if isinstance(e, (FileExistsError, FileNotFoundError, PermissionError, IsADirectoryError, NotADirectoryError)):
+        return False
+    status = getattr(getattr(e, "response", None), "status_code", None)
+    if status is not None:
+        return status == 429 or status >= 500
+    return isinstance(e, (TimeoutError, ConnectionError, OSError)) or "timed out" in str(e).lower()
+
+
+def _disable_colab_cache(e: BaseException) -> None:
+    """On Colab, kagglehub first asks Colab's local dataset-cache service (172.28.0.1:8011) to mount the dataset; that
+    service sometimes does not answer (ReadTimeout after 15 s). DISABLE_COLAB_CACHE=1 makes kagglehub download
+    directly from Kaggle instead (needs KAGGLE_USERNAME/KAGGLE_KEY, which the notebook sets). Read on every call."""
+    import os
+    if os.environ.get("DISABLE_COLAB_CACHE") != "1":
+        os.environ["DISABLE_COLAB_CACHE"] = "1"
+        log.warning("Kaggle: Colab's dataset cache did not answer (%s) - downloading directly from Kaggle from now on",
+                    type(e).__name__)
+
+
+def kaggle_retry(fn, what: str, attempts: int = 5):
+    """fn() with retries on network errors (backoff 5, 10, 20, 40 s); the Colab cache is switched off after the first
+    failure. Non-network errors are raised at once; the last network error is raised after `attempts` tries."""
+    for a in range(attempts):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001 - classified below
+            if not _is_network_error(e) or a == attempts - 1:
+                raise
+            _disable_colab_cache(e)
+            wait = min(60, 5 * 2 ** a)
+            log.warning("%s: %s (%s) - retry %d/%d in %d s", what, type(e).__name__, str(e)[:120], a + 1, attempts - 1, wait)
+            time.sleep(wait)
+
+
+def kaggle_download(handle: str, what: str, **kw) -> str:
+    """kagglehub.dataset_download(handle, **kw) that survives Colab-cache timeouts and flaky connections."""
+    import kagglehub
+    return kaggle_retry(lambda: kagglehub.dataset_download(handle, **kw), what)
+
+
 # ------------------------------------------------------------------------------------------- CIFAKE
+CIFAKE_HANDLE = "birdy654/cifake-real-and-ai-generated-synthetic-images"
+
+
 def prepare_cifake(ctx: Ctx, rng: random.Random) -> list[dict]:
     if ctx.args.cifake_root:
         root = Path(ctx.args.cifake_root)
     else:
-        import kagglehub
-        root = Path(kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images"))
+        try:
+            root = Path(kaggle_download(CIFAKE_HANDLE, "CIFAKE download"))
+        except Exception as e:  # noqa: BLE001 - CIFAKE is mandatory: stop with a clear message, not a traceback
+            raise SystemExit(f"CIFAKE: download from Kaggle failed ({type(e).__name__}: {str(e)[:200]}). Check the "
+                             f"KAGGLE_USERNAME / KAGGLE_KEY secrets and the network, then re-run the same cell, or "
+                             f"pass --cifake-root with a downloaded copy.") from e
     log.info("CIFAKE at %s", root)
     n = ctx.prof["cifake_per_class"]
     rows: list[dict] = []
@@ -344,6 +394,8 @@ class KaggleFiles:
                 status = getattr(getattr(e, "response", None), "status_code", None)
                 if status == 404:
                     return None
+                if _is_network_error(e):
+                    _disable_colab_cache(e)            # Colab cache timing out -> go direct for every later file
                 time.sleep(3 * (attempt + 1) * (4 if status == 429 else 1))   # rate limit -> back off longer
         log.warning("ArtiFact: could not download %s", rel)
         return None
@@ -396,17 +448,26 @@ def prepare_artifact(ctx: Ctx, rng: random.Random) -> list[dict]:
     else:
         root = ctx.work / "artifact"
         try:
-            kf = KaggleFiles(ARTIFACT_HANDLE, root)
-            dirs, files = kf.top_level()
+            kf = kaggle_retry(lambda: KaggleFiles(ARTIFACT_HANDLE, root), "ArtiFact version lookup")
+            dirs, files = kaggle_retry(kf.top_level, "ArtiFact file list")
             want = (["metadata.csv"] if "metadata.csv" in files else []) + [f"{d}/metadata.csv" for d in dirs]
             log.info("ArtiFact: %d sub-datasets - downloading only their metadata and the sampled images into %s",
                      len(dirs), root)
             metas = [p for p in kf.get_many(want) if p]
-        except Exception as e:  # noqa: BLE001 - listing API changed / old kagglehub -> full archive (slow, but works)
-            import kagglehub
+        except Exception as e:  # noqa: BLE001
+            if _is_network_error(e):              # Kaggle unreachable even after retries: ArtiFact is optional
+                log.warning("ArtiFact: Kaggle not reachable (%s: %s) - ArtiFact skipped for this run (training "
+                            "continues; re-run stage 1 with --force later to add it)", type(e).__name__, str(e)[:200])
+                return []
+            # listing API changed / old kagglehub -> full archive (slow, but works)
             log.warning("ArtiFact: per-file download unavailable (%s: %s) - downloading the FULL archive (tens of GB); "
                         "update kagglehub (pip install -U kagglehub) or pass --artifact-root to avoid this", type(e).__name__, e)
-            kf, root = None, Path(kagglehub.dataset_download(ARTIFACT_HANDLE))
+            try:
+                kf, root = None, Path(kaggle_download(ARTIFACT_HANDLE, "ArtiFact full download"))
+            except Exception as e2:  # noqa: BLE001
+                log.warning("ArtiFact: full download failed too (%s: %s) - ArtiFact skipped for this run",
+                            type(e2).__name__, str(e2)[:200])
+                return []
             metas = sorted(root.rglob("metadata.csv"))
     if not metas:
         raise SystemExit(f"ArtiFact: metadata.csv not found under {root}. Look at the folder and adapt prepare_artifact().")

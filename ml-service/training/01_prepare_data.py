@@ -134,18 +134,33 @@ def write_datasets_info(ctx, df: pd.DataFrame, ood: pd.DataFrame | None) -> None
     save_json(ctx.work / "datasets.json", info)
 
 
-KAGGLE = {"CIFAKE": ("cifake_root", "birdy654/cifake-real-and-ai-generated-synthetic-images"),
-          "ArtiFact": ("artifact_root", "awsaf49/artifact-dataset")}
+KAGGLE = {"CIFAKE": ("cifake_root", D.CIFAKE_HANDLE),
+          "ArtiFact": ("artifact_root", D.ARTIFACT_HANDLE)}
 
 
 def _missing(paths) -> int:
     return sum(not Path(p).is_file() for p in paths)
 
 
-def ensure_files(ctx, df: pd.DataFrame) -> None:
-    """Kaggle datasets live on Colab's LOCAL disk (~/.cache/kagglehub), which a disconnect wipes, while manifest.csv
-    on Drive survives. Every resume checks EVERY file of the manifest and re-downloads what disappeared, so the later
-    stages never silently train on a fraction of the data."""
+def _remap(paths: list[str], new_root: Path, depth: int = 3) -> dict[str, str]:
+    """Missing path -> the same file under new_root, matched on its last `depth` path parts (e.g. train/FAKE/x.jpg).
+    Needed because kagglehub puts a dataset in different places (Colab's /kaggle/input/<name>/ mount vs
+    ~/.cache/kagglehub/.../versions/N/), so only the parts below the dataset root are compared."""
+    want = {tuple(Path(p).parts[-depth:]): p for p in paths if not Path(p).is_file()}
+    found = {}
+    for q in new_root.rglob("*"):
+        k = tuple(q.parts[-depth:])
+        if k in want and q.is_file():
+            found[want[k]] = str(q)
+    return found
+
+
+def ensure_files(ctx, df: pd.DataFrame) -> pd.DataFrame:
+    """Kaggle datasets live on Colab's LOCAL disk (~/.cache/kagglehub or the /kaggle/input mount), which a disconnect
+    wipes, while manifest.csv on Drive survives. Every resume checks EVERY file of the manifest and re-downloads what
+    disappeared (pointing the manifest at the new location if kagglehub put it elsewhere), so the later stages never
+    silently train on a fraction of the data."""
+    changed = False
     for src, g in df.groupby("source"):
         paths = g["path"].tolist()
         miss = _missing(paths)
@@ -155,20 +170,30 @@ def ensure_files(ctx, df: pd.DataFrame) -> None:
         art = ctx.work / "artifact"
         if src == "ArtiFact" and not ctx.args.artifact_root and all(Path(q).is_relative_to(art) for q in paths):
             log.info("ArtiFact: re-downloading the %d missing files only", miss)
-            kf = D.KaggleFiles(D.ARTIFACT_HANDLE, art)
+            kf = D.kaggle_retry(lambda: D.KaggleFiles(D.ARTIFACT_HANDLE, art), "ArtiFact version lookup")
             kf.get_many([Path(q).relative_to(art).as_posix() for q in paths if not Path(q).is_file()])
             miss = _missing(paths)
         elif src in KAGGLE and not getattr(ctx.args, KAGGLE[src][0]):
-            import kagglehub
             log.info("%s: re-downloading from Kaggle (local disk was cleared, e.g. by a Colab disconnect)", src)
-            kagglehub.dataset_download(KAGGLE[src][1])
+            new_root = Path(D.kaggle_download(KAGGLE[src][1], f"{src} re-download"))
+            moved = _remap(paths, new_root)
+            if moved:
+                log.info("%s: %d files are now under %s - manifest updated", src, len(moved), new_root)
+                df["path"] = df["path"].map(lambda p: moved.get(p, p))
+                paths = [moved.get(p, p) for p in paths]
+                changed = True
             miss = _missing(paths)
         if miss:
             raise SystemExit(f"{src}: {miss} of {len(paths)} files from manifest.csv no longer exist "
                              f"(e.g. {next(p for p in paths if not Path(p).is_file())}). Restore the dataset folder, or "
                              f"rebuild everything with --force (all stages are then recomputed).")
         log.info("%s: files restored", src)
+    if changed:
+        tmp = ctx.manifest.with_name(ctx.manifest.name + ".part")
+        df.to_csv(tmp, index=False)
+        tmp.replace(ctx.manifest)
     log.info("all %d manifest files present", len(df))
+    return df
 
 
 def ood_problems(ctx, ood: pd.DataFrame | None) -> list[str]:
@@ -192,7 +217,7 @@ def main() -> None:
         log.info("%s already exists - reusing (use --force to rebuild)", ctx.manifest.name)
         check_manifest_size(ctx)
         df = pd.read_csv(ctx.manifest)
-        ensure_files(ctx, df)
+        df = ensure_files(ctx, df)
         D.check_balance(df, ctx.reports / "balance_check.json")   # a manifest from an older version is re-validated
         check_complete(ctx, df)
     else:
