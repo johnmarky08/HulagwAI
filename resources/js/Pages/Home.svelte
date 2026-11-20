@@ -79,7 +79,7 @@
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
-                            onclick={openLogin}><span>♙</span> Log in</button
+                            onclick={openLogin}><span>♙</span> Log In</button
                         >
                     {/if}
                     <a
@@ -201,7 +201,7 @@
                         >About HulagwAI</span
                     >
                     <h3 class="mt-4 text-2xl font-extrabold leading-tight">
-                        Authenticity needs<br />context, not certainty.
+                        Authenticity Needs<br />Context, Not Certainty.
                     </h3>
                     <p class="mt-3 text-xs leading-5 text-slate-300">
                         HulagwAI helps assess whether an image may be
@@ -211,7 +211,7 @@
                     <a
                         use:inertia
                         class="mt-4 inline-flex rounded-xl border border-indigo-400 bg-indigo-700 px-5 py-2 text-sm font-semibold text-white"
-                        href="/detect">Try it now</a
+                        href="/detect">Try It Now</a
                     >
                 </div>
                 <aside
@@ -239,8 +239,8 @@
             </div>
             <div class="grid gap-5 md:grid-cols-3">
                 {#each [
-                    { number: "01", name: "Joshua Bartolome", role: "Frontend developer", description: "Builds the upload experience, result views, and responsive interface.", img: josh }, 
-                    { number: "02", name: "John Marky Natividad", role: "Backend developer", description: "Connects analysis requests, stores results, and supports analysis history.", img: marky }, 
+                    { number: "01", name: "Joshua Bartolome", role: "Frontend Developer", description: "Builds the upload experience, result views, and responsive interface.", img: josh }, 
+                    { number: "02", name: "John Marky Natividad", role: "Backend Developer", description: "Connects analysis requests, stores results, and supports analysis history.", img: marky }, 
                     { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project.", img: nico }] 
                     as developer}
                     <article

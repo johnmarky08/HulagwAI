@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { session, refreshSession } from "../../api/session.svelte.js";
     import LoginModal from "./LoginModal.svelte";
+    import { ui } from "../../official/controller.svelte.js";
 
     // Wraps signed-in-only content: blurred and inert for guests, with a prompt to log in.
     // Blur applies only once the session is known to be a guest, so signed-in users never see it flash.
@@ -30,7 +31,7 @@
         {@render children?.()}
     </div>
     <!-- Moved to <body>: page wrappers with transform/filter would otherwise turn "fixed" into "absolute". -->
-    <div class="login-gate-layer" use:portal>
+    <div class="login-gate-layer" class:light-mode={ui.light} use:portal>
         {#if locked}
             <div class="login-gate-overlay">
                 <div
@@ -56,12 +57,12 @@
                             /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg
                         >
                     </span>
-                    <h2 id="login-gate-title">Log in to use</h2>
+                    <h2 id="login-gate-title">Log In to Continue</h2>
                     <p>Don't worry, you can still use the other features.</p>
                     <button
                         type="button"
                         class="login-gate-primary"
-                        onclick={() => (loginOpen = true)}>Log in</button
+                        onclick={() => (loginOpen = true)}>Log In</button
                     >
                 </div>
             </div>
@@ -141,18 +142,19 @@
         outline-offset: 3px;
     }
 
-    :global(.app-shell.light-mode) .login-gate-card {
+    /* The layer is moved to <body>, outside .app-shell, so it carries the light-mode class itself. */
+    .login-gate-layer.light-mode .login-gate-card {
         border-color: #c7d2fe;
         background: #fffdf8;
         box-shadow: 0 30px 70px -28px rgb(67 56 202 / 35%);
     }
-    :global(.app-shell.light-mode) .login-gate-card h2 {
+    .login-gate-layer.light-mode .login-gate-card h2 {
         color: #29251f;
     }
-    :global(.app-shell.light-mode) .login-gate-card p {
+    .login-gate-layer.light-mode .login-gate-card p {
         color: #4a453d;
     }
-    :global(.app-shell.light-mode) .login-gate-icon {
+    .login-gate-layer.light-mode .login-gate-icon {
         background: #e0e7ff;
         color: #4338ca;
         border-color: #c7d2fe;

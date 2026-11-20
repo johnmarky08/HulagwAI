@@ -7,25 +7,25 @@
         {
             n: "01",
             icon: "↓",
-            title: "Download and extract",
+            title: "Download and Extract",
             text: "Download the ZIP above and extract it to a folder you will keep. Do not select the ZIP itself when loading the extension.",
         },
         {
             n: "02",
             icon: "⬡",
-            title: "Load it in your browser",
+            title: "Load It in Your Browser",
             text: "Open brave://extensions, chrome://extensions, or edge://extensions. Turn on Developer mode, choose Load unpacked, then select the extracted folder containing manifest.json.",
         },
         {
             n: "03",
             icon: "↔",
-            title: "Pair your HulagwAI account",
+            title: "Pair Your HulagwAI Account",
             text: "Click the extension icon to open its settings popup. Enter the HulagwAI site address and choose Open secure pairing page. Sign in if asked, copy the short-lived code, then paste it into the settings popup.",
         },
         {
             n: "04",
             icon: "⌕",
-            title: "Right-click any image",
+            title: "Right-Click Any Image",
             text: "Choose Scan image with HulagwAI from the context menu. Grant access to that image host if prompted, then explicitly confirm the upload.",
         },
     ];
@@ -33,28 +33,28 @@
     const flow = [
         {
             n: "1",
-            title: "You choose",
+            title: "You Choose",
             text: "Right-click the specific image and select Scan image with HulagwAI. No webpage scan buttons are injected.",
         },
         {
             n: "2",
-            title: "You confirm",
+            title: "You Confirm",
             text: "The HulagwAI toolbar popup opens with a confirmation that previews the selected image. Grant access to its host, then choose Send image for analysis.",
         },
         {
             n: "3",
-            title: "HulagwAI analyzes",
+            title: "HulagwAI Analyzes",
             text: "The existing analysis service processes the image; the extension shows the result and logs the analysis ID.",
         },
     ];
 
     const help = [
         {
-            title: "No context-menu item?",
+            title: "No Context-Menu Item?",
             text: "Click the extension icon to open its settings popup and turn on Enable right-click scanning. Reload the extension if you just updated it.",
         },
         {
-            title: "Pairing code rejected?",
+            title: "Pairing Code Rejected?",
             text: "Make sure the extension settings popup and signed-in HulagwAI page use the same site address. Codes expire after three minutes; generate a fresh one.",
         },
         {
@@ -65,7 +65,7 @@
 </script>
 
 <svelte:head>
-    <title>HulagwAI · Browser extension</title>
+    <title>HulagwAI · Browser Extension</title>
     <meta
         name="description"
         content="Install and pair the HulagwAI web image scanner beta."
@@ -74,7 +74,7 @@
 
 <Layout active="extension">
     <LoginGate>
-        <main class="extension-page mx-auto max-w-6xl px-5 pb-16 sm:px-8">
+        <main class="extension-page mx-auto min-h-[calc(100vh-80px)] max-w-6xl px-5 pb-16 sm:px-8">
             <section
                 class="extension-hero relative mt-7 overflow-hidden rounded-3xl border border-indigo-500/40 bg-linear-to-br from-indigo-950 via-slate-950 to-slate-900 p-6 shadow-2xl shadow-indigo-950/30 sm:mt-10 sm:p-10"
             >
@@ -93,7 +93,7 @@
                     <h1
                         class="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl"
                     >
-                        Check images anywhere on the web.
+                        Check Images Anywhere on the Web.
                     </h1>
                     <p
                         class="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7"
@@ -135,7 +135,7 @@
                             use:inertia
                             class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-indigo-300"
                             href="/extension/connect"
-                            >Pair an installed extension</a
+                            >Pair an Installed Extension</a
                         >
                     </div>
                     <p class="mt-3 text-xs leading-5 text-slate-400">
@@ -154,13 +154,13 @@
                         <p
                             class="text-xs font-bold uppercase tracking-[.15em] text-indigo-400"
                         >
-                            Setup guide
+                            Setup Guide
                         </p>
                         <h2
                             id="install-heading"
                             class="mt-2 text-2xl font-extrabold text-white sm:text-3xl"
                         >
-                            Install and connect in a few minutes
+                            Install and Connect in a Few Minutes
                         </h2>
                     </div>
                     <span
@@ -209,7 +209,7 @@
                     class="rounded-2xl border border-indigo-500/35 bg-indigo-950/20 p-5 sm:p-7"
                 >
                     <h2 class="text-xl font-extrabold text-white">
-                        What happens when you scan?
+                        What Happens When You Scan?
                     </h2>
                     <ol
                         class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch"
@@ -246,7 +246,7 @@
                     class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-7"
                 >
                     <h2 class="text-xl font-extrabold text-white">
-                        Before you install
+                        Before You Install
                     </h2>
                     <ul class="mt-5 space-y-4 text-sm leading-6 text-slate-400">
                         <li class="flex gap-3">
@@ -306,7 +306,7 @@
                 aria-labelledby="help-heading"
             >
                 <h2 id="help-heading" class="text-xl font-extrabold text-white">
-                    Quick troubleshooting
+                    Quick Troubleshooting
                 </h2>
                 <div class="mt-6 grid gap-4 md:grid-cols-3">
                     {#each help as item (item.title)}

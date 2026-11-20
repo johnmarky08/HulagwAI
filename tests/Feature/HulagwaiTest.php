@@ -336,7 +336,7 @@ class HulagwaiTest extends TestCase
         $id = $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png()])->json('id');
         $rec = \App\Services\Records::fromModel(Analysis::where('uuid', $id)->first());
         $html = view('reports.analysis', app(\App\Services\ReportBuilder::class)->viewData($rec, ModelVersion::first(), null, null))->render();
-        foreach (['Likely generator', 'Midjourney', '71%', 'Why it may look AI-generated', 'Pixel-level texture signal', 'closed-set estimate', 'Recall / sensitivity'] as $needle) {
+        foreach (['Likely Generator', 'Midjourney', '71%', 'Why It May Look AI-Generated', 'Pixel-level texture signal', 'closed-set estimate', 'Recall / sensitivity'] as $needle) {
             $this->assertStringContainsString($needle, $html, $needle);
         }
         if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {

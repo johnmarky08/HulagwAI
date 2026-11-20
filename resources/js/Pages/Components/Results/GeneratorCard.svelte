@@ -21,7 +21,7 @@
         <div>
             <p class="text-xs font-bold tracking-wider text-indigo-300">LIKELY GENERATOR</p>
             <h2 class="mt-1 text-xl font-bold">
-                {#if attribution?.available}{attribution.headline}{:else}Not available{/if}
+                {#if attribution?.available}{attribution.headline}{:else}Not Available{/if}
             </h2>
         </div>
         {#if attribution?.available}
@@ -39,7 +39,7 @@
 
     {#if attribution?.available}
         <ul class="mt-5 space-y-3" aria-label="Closest generator families">
-            {#each attribution.top as cand, i (`${cand.family}-${i}`)}
+            {#each attribution.top ?? [] as cand, i (`${cand.family}-${i}`)}
                 <li>
                     <div class="flex justify-between text-sm">
                         <span class:font-semibold={i === 0 && !unknown}>{cand.label}</span>

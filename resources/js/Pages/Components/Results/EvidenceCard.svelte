@@ -21,7 +21,7 @@
         <div>
             <p class="text-xs font-bold tracking-wider text-indigo-300">WHY IT MAY LOOK AI-GENERATED</p>
             <h2 class="mt-1 text-xl font-bold">
-                {signals.length ? `${signals.length} signal${signals.length > 1 ? "s" : ""} found` : "No strong signals"}
+                {signals.length ? `${signals.length} Signal${signals.length > 1 ? "s" : ""} Found` : "No Strong Signals"}
             </h2>
         </div>
         {#if heatmapUrl}
@@ -29,7 +29,7 @@
                 type="button"
                 class="shrink-0 rounded-xl border border-indigo-500 px-3 py-2 text-xs text-indigo-300"
                 aria-pressed={showHeatmap}
-                onclick={onToggleHeatmap}>{showHeatmap ? "Hide heat map" : "Show heat map"}</button
+                onclick={onToggleHeatmap}>{showHeatmap ? "Hide Heat Map" : "Show Heat Map"}</button
             >
         {/if}
     </header>
@@ -64,7 +64,7 @@
 
     {#if heatmapUrl}
         <p class="mt-5 text-xs text-slate-400">
-            Heat map: warmer colours mark the patches the pixel-level detector scored as more AI-like.
+            Heat map: warmer colors mark the patches the pixel-level detector scored as more AI-like.
             Use the toggle to view it on the image.
         </p>
     {/if}

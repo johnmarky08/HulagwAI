@@ -1,13 +1,20 @@
 <script>
+    import { onMount } from "svelte";
     import { inertia } from "@inertiajs/svelte";
     import Layout from "../Components/Layout.svelte";
     import {
         forgotForm as form,
         submitForgot,
     } from "../../official/authPages.svelte.js";
+
+    // The form state lives in a shared module: drop the result of an earlier visit.
+    onMount(() => {
+        form.error = "";
+        form.message = "";
+    });
 </script>
 
-<svelte:head><title>HulagwAI · Forgot password</title></svelte:head>
+<svelte:head><title>HulagwAI · Forgot Password</title></svelte:head>
 <Layout active="">
     <main class="grid min-h-[calc(100vh-80px)] place-items-center px-5 py-12">
         <div class="w-full max-w-[480px]">
@@ -15,7 +22,7 @@
                 class="rounded-2xl border border-slate-800 bg-slate-900/70 p-7 shadow-2xl shadow-black/20 sm:p-8"
             >
                 <h1 class="text-3xl font-extrabold tracking-tight">
-                    Forgot your password?
+                    Forgot Your Password?
                 </h1>
                 <p class="mt-2 text-sm text-slate-400">
                     Enter your account email and we'll send you a link to
@@ -50,7 +57,7 @@
                     <button
                         class="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
                         disabled={form.busy}
-                        >{form.busy ? "Sending…" : "Send reset link"}</button
+                        >{form.busy ? "Sending…" : "Send Reset Link"}</button
                     >
                 </form>
                 <p class="mt-6 text-center text-sm text-slate-400">

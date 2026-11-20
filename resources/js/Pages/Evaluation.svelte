@@ -28,18 +28,23 @@
             )
             .join(" ");
     const date = (v) => (v ? new Date(v).toLocaleDateString() : "date unknown");
+    // "jpeg_quality_70" -> "Jpeg quality 70"
+    const sentence = (k) => {
+        const s = String(k).replaceAll("_", " ");
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    };
     const card = "rounded-2xl border border-indigo-500/40 bg-slate-900 p-6";
 </script>
 
-<svelte:head><title>HulagwAI · Model evaluation</title></svelte:head>
+<svelte:head><title>HulagwAI · Model Evaluation</title></svelte:head>
 
 <Layout active="evaluation">
-    <main class="mx-auto max-w-1240px px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-1240px px-5 pb-16">
         <div class="mx-auto mb-8 mt-10 max-w-3xl text-center">
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
             >
-                Model evaluation
+                Model Evaluation
             </h1>
             <p class="mt-3 text-sm text-slate-400">
                 How well the detector and the generator-attribution model did on
@@ -121,7 +126,7 @@
 
             <section class="mb-6 grid gap-6 lg:grid-cols-2">
                 <article class={card}>
-                    <h2 class="mb-4 text-xl font-bold">Confusion matrix</h2>
+                    <h2 class="mb-4 text-xl font-bold">Confusion Matrix</h2>
                     <table class="w-full text-center text-sm">
                         <thead class="text-slate-400"
                             ><tr
@@ -158,7 +163,7 @@
                 {#if m.roc}
                     <article class={card}>
                         <h2 class="mb-4 text-xl font-bold">
-                            ROC curve <span
+                            ROC Curve <span
                                 class="text-sm font-normal text-slate-400"
                                 >AUC {num(t.roc_auc, 3)}</span
                             >
@@ -214,7 +219,7 @@
 
             {#if m.comparison}
                 <article class={`${card} mb-6`}>
-                    <h2 class="mb-4 text-xl font-bold">Model comparison</h2>
+                    <h2 class="mb-4 text-xl font-bold">Model Comparison</h2>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-140 text-left text-sm">
                             <thead class="text-slate-400"
@@ -245,7 +250,7 @@
                     <p class="mt-3 text-xs text-slate-400">
                         {m.comparison.basis}
                     </p>
-                    {#if m.cross_validation}<p
+                    {#if m.cross_validation?.accuracy && m.cross_validation?.roc_auc}<p
                             class="mt-2 text-xs text-slate-400"
                         >
                             5-fold cross-validation: accuracy {pct(
@@ -262,9 +267,9 @@
             {#if m.attribution?.test}
                 {@const a = m.attribution}
                 <article class={`${card} mb-6`}>
-                    <h2 class="text-xl font-bold">Generator attribution</h2>
+                    <h2 class="text-xl font-bold">Generator Attribution</h2>
                     <p class="mt-1 text-sm text-slate-400">
-                        Which AI family made an image, over {a.families.length} families
+                        Which AI family made an image, over {a.families?.length ?? Object.keys(a.test.per_family ?? {}).length} families
                         (chance level {pct(a.test.chance_level)}). It answers
                         “unknown” when confidence is below {Math.round(
                             a.tau * 100,
@@ -290,10 +295,10 @@
                                 ></thead
                             >
                             <tbody
-                                >{#each Object.entries(a.test.per_family) as [fam, r]}
+                                >{#each Object.entries(a.test.per_family ?? {}) as [fam, r]}
                                     <tr class="border-t border-slate-800"
                                         ><td class="py-2 pr-3"
-                                            >{a.labels[fam] ?? fam}</td
+                                            >{a.labels?.[fam] ?? fam}</td
                                         ><td>{r.n}</td><td
                                             >{pct(r.precision)}</td
                                         ><td>{pct(r.recall)}</td><td
@@ -313,7 +318,7 @@
                     {#if m.selective}
                         <article class={card}>
                             <h2 class="text-xl font-bold">
-                                “Inconclusive” band
+                                “Inconclusive” Band
                             </h2>
                             <p class="mt-1 text-sm text-slate-400">
                                 Scores between {pct(m.selective.real_max, 0)} and
@@ -375,7 +380,7 @@
                 <section class="mb-6 grid gap-6 lg:grid-cols-2">
                     {#if m.per_source}
                         <article class={card}>
-                            <h2 class="mb-3 text-xl font-bold">Per dataset</h2>
+                            <h2 class="mb-3 text-xl font-bold">Per Dataset</h2>
                             <div class="overflow-x-auto">
                                 <table
                                     class="w-full min-w-105 text-left text-sm"
@@ -409,7 +414,7 @@
                     {#if m.per_generator && Object.keys(m.per_generator).length}
                         <article class={card}>
                             <h2 class="mb-3 text-xl font-bold">
-                                Per generator
+                                Per Generator
                             </h2>
                             <table class="w-full text-sm">
                                 <tbody
@@ -434,11 +439,11 @@
                 {#if m.errors}
                     <article class={card}>
                         <h2 class="mb-3 text-xl font-bold">
-                            Where it struggles
+                            Where It Struggles
                         </h2>
                         <table class="w-full text-sm">
                             <tbody
-                                >{#each Object.entries(m.errors.by_resolution) as [k, v]}
+                                >{#each Object.entries(m.errors.by_resolution ?? {}) as [k, v]}
                                     <tr class="border-t border-slate-800"
                                         ><td class="py-2">{k}</td><td
                                             class="text-slate-400"
@@ -463,7 +468,7 @@
                                 >{#each Object.entries(m.robustness) as [k, v]}
                                     <tr class="border-t border-slate-800"
                                         ><td class="py-2"
-                                            >{k.replaceAll("_", " ")}</td
+                                            >{sentence(k)}</td
                                         ><td class="text-right"
                                             >{pct(v.accuracy)}</td
                                         ></tr

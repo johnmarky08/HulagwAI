@@ -38,6 +38,6 @@
     <div
         class="border-t border-indigo-500/40 px-6 py-4 text-xs text-slate-500 md:px-12"
     >
-        © 2026 HulagwAI
+        © {new Date().getFullYear()} HulagwAI
     </div>
 </footer>

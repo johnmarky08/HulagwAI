@@ -48,7 +48,7 @@ export const ui = $state({
     analysis: null,
     result: null,
     error: "",
-    errorTitle: "Invalid file format",
+    errorTitle: "Invalid File Format",
     historyError: "",
     loadingHistory: false,
     loadingResult: false,
@@ -203,11 +203,11 @@ export function toggleTheme() {
 export function selectFile(file) {
     if (!file) return;
     ui.error = "";
-    ui.errorTitle = "Invalid file format";
+    ui.errorTitle = "Invalid File Format";
     if (!/\.(jpe?g|png|webp)$/i.test(file.name)) {
         ui.file = null;
         ui.preview = "";
-        ui.error = `“${file.name}” is not supported. Please use JPG, JPEG, PNG, WEBP`;
+        ui.error = `“${file.name}” is not supported. Please use a JPG, PNG, or WEBP image.`;
         return;
     }
     if (file.size > maxBytes) {
@@ -274,7 +274,7 @@ export async function startAnalysis() {
                   );
         if (signal.cancelled) return;
         if (final.status === "failed") {
-            ui.errorTitle = "Analysis failed";
+            ui.errorTitle = "Analysis Failed";
             ui.error =
                 final.error?.message ??
                 "Analysis failed. Please try another image.";
@@ -285,7 +285,7 @@ export async function startAnalysis() {
         ui.phase = "results";
     } catch (error) {
         if (!signal.cancelled) {
-            ui.errorTitle = "Unable to analyze image";
+            ui.errorTitle = "Unable to Analyze Image";
             ui.error = errorMessage(error);
             ui.phase = "upload";
         }
@@ -304,6 +304,8 @@ export async function cancelAnalysis() {
     ui.phase = "upload";
     ui.analysis = null;
     ui.progress = 0;
+    // A result opened from History only has a description of the file, not one that can be re-uploaded.
+    if (ui.file && !(ui.file instanceof Blob)) removeFile();
 }
 
 export function setHistorySearch(value) {
@@ -396,7 +398,7 @@ export async function loadAnalysisById(id) {
         ui.phase = "results";
     } catch (error) {
         if (stale()) return;
-        ui.errorTitle = "Unable to load analysis";
+        ui.errorTitle = "Unable to Load Analysis";
         ui.error = errorMessage(error);
         ui.phase = "upload";
         // ui.file was only a description of the stored image, not an uploadable File.

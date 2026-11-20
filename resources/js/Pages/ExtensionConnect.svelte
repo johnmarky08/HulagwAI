@@ -21,7 +21,10 @@
             clearInterval(expiryTimer);
             expiryTimer = setInterval(() => {
                 secondsLeft = Math.max(0, secondsLeft - 1);
-                if (!secondsLeft) code = "";
+                if (!secondsLeft) {
+                    code = "";
+                    clearInterval(expiryTimer);
+                }
             }, 1000);
         } catch (exception) {
             error = errorMessage(exception);
@@ -47,7 +50,7 @@
 </script>
 
 <svelte:head>
-    <title>HulagwAI · Pair browser extension</title>
+    <title>HulagwAI · Pair Browser Extension</title>
 </svelte:head>
 
 <Layout active="extension">
@@ -61,7 +64,7 @@
                 One-time browser pairing
             </p>
             <h1 class="mt-3 text-2xl font-extrabold text-white sm:text-3xl">
-                Connect the HulagwAI image scanner
+                Connect the HulagwAI Image Scanner
             </h1>
             <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
                 This short-lived code lets the browser extension request a
@@ -86,7 +89,7 @@
                         class="mt-4 rounded-lg border border-indigo-400/50 bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
                         type="button"
                         onclick={copyCode}
-                        >{copied ? "Copied" : "Copy pairing code"}</button
+                        >{copied ? "Copied" : "Copy Pairing Code"}</button
                     >
                 {:else if loading}
                     <p class="text-sm text-slate-300">
@@ -99,7 +102,7 @@
                     <button
                         class="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
                         type="button"
-                        onclick={createCode}>Generate a new code</button
+                        onclick={createCode}>Generate a New Code</button
                     >
                 {/if}
                 {#if error}<p class="mt-4 text-sm text-rose-300" role="alert">

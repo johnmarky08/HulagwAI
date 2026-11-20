@@ -1,4 +1,5 @@
 <script>
+    import { onMount } from "svelte";
     import { inertia } from "@inertiajs/svelte";
     import Layout from "../Components/Layout.svelte";
     import {
@@ -8,9 +9,17 @@
 
     // Props come from PasswordResetController@showReset (token in the path, email in the query string).
     let { token = "", email = "" } = $props();
+
+    // The form state lives in a shared module: a new reset link must show the form, not the last result.
+    onMount(() => {
+        form.error = "";
+        form.message = "";
+        form.password = "";
+        form.confirm = "";
+    });
 </script>
 
-<svelte:head><title>HulagwAI · Reset password</title></svelte:head>
+<svelte:head><title>HulagwAI · Reset Password</title></svelte:head>
 <Layout active="">
     <main class="grid min-h-[calc(100vh-80px)] place-items-center px-5 py-12">
         <div class="w-full max-w-[480px]">
@@ -18,7 +27,7 @@
                 class="rounded-2xl border border-slate-800 bg-slate-900/70 p-7 shadow-2xl shadow-black/20 sm:p-8"
             >
                 <h1 class="text-3xl font-extrabold tracking-tight">
-                    Choose a new password
+                    Choose a New Password
                 </h1>
                 <p class="mt-2 text-sm text-slate-400">
                     {#if email}For <span class="text-slate-200">{email}</span
@@ -87,7 +96,7 @@
                         <button
                             class="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
                             disabled={form.busy || !token}
-                            >{form.busy ? "Saving…" : "Reset password"}</button
+                            >{form.busy ? "Saving…" : "Reset Password"}</button
                         >
                     </form>
                 {/if}

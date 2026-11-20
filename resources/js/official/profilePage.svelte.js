@@ -22,6 +22,18 @@ export const profile = $state({
 });
 
 export async function loadProfile() {
+    // This state outlives the page: clear banners and half-filled forms from an earlier visit.
+    Object.assign(profile, {
+        saved: false,
+        passwordChanged: false,
+        passwordFormOpen: false,
+        currentPassword: "",
+        newPassword: "",
+        newPasswordConfirmation: "",
+        confirmDeleteOpen: false,
+        password: "",
+        error: "",
+    });
     // Show the known account straight away on navigation; the fresh /me result then replaces it.
     const cached = session.value;
     if (cached?.authenticated) {
