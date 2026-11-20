@@ -306,7 +306,7 @@
                             >Google<small
                                 class="mt-1 block text-xs text-slate-400"
                                 >{googleConnected
-                                    ? `Connected as ${profile.me.user.email}`
+                                    ? "Connected. You can log in with Google."
                                     : "Not connected"}</small
                             ></span
                         >

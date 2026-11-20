@@ -10,7 +10,14 @@ window.addEventListener("paste", (event) => {
     const image = [...(event.clipboardData?.items ?? [])]
         .find((item) => item.type.startsWith("image/"))
         ?.getAsFile();
-    if (image) selectFile(new File([image], "pasted-image.png", { type: image.type }));
+    if (!image) return;
+    // The server checks that the extension matches the real content, so name the file after its type.
+    const extension = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[image.type];
+    if (!extension) {
+        selectFile(new File([image], "pasted-image.unsupported", { type: image.type })); // shows the format error
+        return;
+    }
+    selectFile(new File([image], `pasted-image.${extension}`, { type: image.type }));
 });
 
 createInertiaApp({

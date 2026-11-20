@@ -105,7 +105,7 @@
     {#if findings.length}
         <h3 class="mt-6 text-sm font-semibold">File & provenance findings</h3>
         <ul class="mt-3 space-y-2">
-            {#each findings as f (f.id)}
+            {#each findings as f, i (`${f.id}-${i}`)}
                 <li class="rounded-xl border border-slate-700 bg-slate-950 p-3">
                     <div class="flex flex-wrap items-center gap-2">
                         <span
@@ -131,7 +131,7 @@
     {#if warnings.length}
         <h3 class="mt-6 text-sm font-semibold">Quality warnings</h3>
         <ul class="mt-2 space-y-1 text-sm text-amber-300">
-            {#each warnings as w (w)}
+            {#each warnings as w, i (`${w}-${i}`)}
                 <li>⚠ {warningText[w] ?? w.replaceAll("_", " ")}</li>
             {/each}
         </ul>
@@ -145,7 +145,7 @@
             <p class="mt-2">{notice.intended_use}</p>
             {#if notice.limitations?.length}
                 <ul class="mt-2 list-disc pl-5">
-                    {#each notice.limitations as l (l)}<li>{l}</li>{/each}
+                    {#each notice.limitations as l, i (i)}<li>{l}</li>{/each}
                 </ul>
             {/if}
         </details>

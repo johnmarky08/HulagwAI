@@ -34,7 +34,9 @@
             : service.status === "unreachable" || service.status === "error"
               ? "The analysis service is currently unavailable, so new analyses may fail. Please try again shortly."
               : service.model_loaded === false
-                ? "The detection model is not installed on this server yet. Results will rely on file metadata only."
+                ? service.metadata_only
+                    ? "The detection model is not installed on this server yet. Results will rely on file metadata only."
+                    : "The detection model is not installed on this server yet, so analyses cannot run right now."
                 : "",
     );
 

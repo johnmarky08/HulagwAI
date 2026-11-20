@@ -96,8 +96,9 @@ class GoogleAuthController extends Controller
         }
 
         $user = User::where('google_id', $sub)->first();
-        if (! $user && ($user = User::where('email', $email)->first())) {
+        if (! $user && ($user = User::where('email', $email)->first()) && $user->google_id === null) {
             // Google verified this address, so it is safe to attach Google to the existing account.
+            // An account already linked to another Google identity keeps that link.
             $user->forceFill(['google_id' => $sub])->save();
         }
         $created = false;

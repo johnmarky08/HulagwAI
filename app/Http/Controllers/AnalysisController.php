@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AnalysisStatus;
 use App\Exceptions\QuotaExceeded;
 use App\Http\Requests\UploadImageRequest;
 use App\Jobs\AnalyzeImageJob;
@@ -36,7 +37,7 @@ class AnalysisController extends Controller
         $img = $guard->inspect($request->file('image'));
         $user = $request->user();
 
-        if (! $user && count($this->guest->pending()) >= (int) config('hulagwai.guest.pending_limit')) {
+        if (! $user && $this->activeGuestAnalyses() >= (int) config('hulagwai.guest.pending_limit')) {
             return $this->error('too_many_pending', 'Please wait for your current analysis to finish.', 429);
         }
         if (Analysis::where('status', 'queued')->count() >= (int) config('hulagwai.queue.max_backlog')) {
@@ -186,6 +187,32 @@ class AnalysisController extends Controller
         $b64 = $variant === 'heatmap' ? ($rec['heatmap_b64'] ?? null) : ($rec['thumb_b64'] ?? null);
 
         return $b64 ? (base64_decode($b64, true) ?: null) : null;
+    }
+
+    /**
+     * Guest analyses that are genuinely still running. Failed/cancelled or vanished rows are dropped from the
+     * session's pending list, so two failed uploads no longer lock a guest out until the cleanup job runs.
+     * Finished-but-unclaimed rows stay pending (the result is claimed on the next poll) but do not count.
+     */
+    private function activeGuestAnalyses(): int
+    {
+        $pending = $this->guest->pending();
+        if ($pending === []) {
+            return 0;
+        }
+        $rows = Analysis::whereIn('uuid', $pending)->whereNull('user_id')->pluck('status', 'uuid');
+        $active = 0;
+        foreach ($pending as $id) {
+            $status = $rows[$id] ?? null;
+            $status = is_string($status) ? AnalysisStatus::tryFrom($status) : $status;
+            if ($status === null || in_array($status, [AnalysisStatus::Failed, AnalysisStatus::Cancelled], true)) {
+                $this->guest->removePending($id);
+            } elseif ($status !== AnalysisStatus::Done) {
+                $active++;
+            }
+        }
+
+        return $active;
     }
 
     private function duplicate(int|string $userId, string $sha): ?Analysis

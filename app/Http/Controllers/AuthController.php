@@ -87,8 +87,28 @@ class AuthController extends Controller
 
     private function done(Request $request, User $user): JsonResponse|RedirectResponse
     {
-        return $request->expectsJson()
-            ? response()->json(['user' => $user->toAccountArray()])
-            : redirect()->intended('/');
+        if (! $request->expectsJson()) {
+            return redirect()->intended('/dashboard');
+        }
+
+        return response()->json(['user' => $user->toAccountArray(), 'redirect' => $this->intendedPath($request)]);
+    }
+
+    /**
+     * Where to go after a JSON login: the page the auth middleware bounced the visitor from (e.g. the extension
+     * pairing page). Only a same-site path is returned, so it can never become an open redirect.
+     */
+    private function intendedPath(Request $request): string
+    {
+        $url = (string) $request->session()->pull('url.intended', '');
+        $parts = parse_url($url);
+        $sameHost = ! isset($parts['host']) || strcasecmp($parts['host'], $request->getHost()) === 0;
+        $path = (string) ($parts['path'] ?? '');
+
+        if ($url === '' || ! $sameHost || ! str_starts_with($path, '/') || str_starts_with($path, '//')) {
+            return '/dashboard';
+        }
+
+        return $path.(isset($parts['query']) ? '?'.$parts['query'] : '');
     }
 }

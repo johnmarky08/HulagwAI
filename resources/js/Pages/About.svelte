@@ -193,7 +193,7 @@
                     <ul
                         class="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-400"
                     >
-                        {#each notice.responsible_use as item (item)}<li>
+                        {#each notice.responsible_use as item, i (i)}<li>
                                 {item}
                             </li>{/each}
                     </ul>
@@ -209,7 +209,7 @@
                 <h2 id="limits-heading" class="font-bold">Limitations</h2>
                 {#if notice?.limitations?.length}
                     <ul class="mt-2 list-disc pl-5">
-                        {#each notice.limitations as item (item)}<li>
+                        {#each notice.limitations as item, i (i)}<li>
                                 {item}
                             </li>{/each}
                     </ul>

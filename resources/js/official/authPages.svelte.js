@@ -4,13 +4,22 @@ import { errorMessage } from "../api/client";
 export const loginForm = $state({ email: "", password: "", error: "", busy: false, showPassword: false });
 export const registerForm = $state({ name: "", email: "", password: "", confirm: "", error: "", busy: false, showPassword: false });
 
-export async function submitLogin(event) {
+/** Only same-site paths from the server are followed. */
+function goAfterAuth(result) {
+    const to = typeof result?.redirect === "string" && /^\/(?!\/)/.test(result.redirect) ? result.redirect : "/dashboard";
+    window.location.assign(to);
+}
+
+/** @param {boolean} stayOnPage true from the login modal: reload the current page instead of navigating away */
+export async function submitLogin(event, stayOnPage = false) {
     event.preventDefault();
     loginForm.busy = true;
     loginForm.error = "";
     try {
-        await auth.login(loginForm.email, loginForm.password);
-        window.location.assign("/dashboard");
+        const result = await auth.login(loginForm.email, loginForm.password);
+        loginForm.password = "";
+        if (stayOnPage) window.location.reload();
+        else goAfterAuth(result);
     } catch (error) {
         loginForm.error = errorMessage(error);
     } finally {
@@ -23,8 +32,10 @@ export async function submitRegister(event) {
     registerForm.busy = true;
     registerForm.error = "";
     try {
-        await auth.register(registerForm.name, registerForm.email, registerForm.password, registerForm.confirm);
-        window.location.assign("/dashboard");
+        const result = await auth.register(registerForm.name, registerForm.email, registerForm.password, registerForm.confirm);
+        registerForm.password = "";
+        registerForm.confirm = "";
+        goAfterAuth(result);
     } catch (error) {
         registerForm.error = errorMessage(error);
     } finally {

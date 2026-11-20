@@ -36,7 +36,7 @@
 
     {#if signals.length}
         <ul class="mt-5 space-y-3">
-            {#each signals as f (f.id)}
+            {#each signals as f, i (`${f.id}-${i}`)}
                 <li class="rounded-xl border border-slate-700 bg-slate-950 p-4">
                     <div class="flex items-center gap-2">
                         <span class={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase ${tone[f.strength] ?? tone.weak}`}
@@ -57,7 +57,7 @@
         <div class="mt-5">
             <p class="text-xs font-semibold text-slate-400">What weakens this evidence</p>
             <ul class="mt-2 space-y-1 text-sm text-slate-300">
-                {#each limits as f (f.id)}<li>⚠ {f.detail}</li>{/each}
+                {#each limits as f, i (`${f.id}-${i}`)}<li>⚠ {f.detail}</li>{/each}
             </ul>
         </div>
     {/if}

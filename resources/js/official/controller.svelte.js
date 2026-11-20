@@ -102,6 +102,8 @@ export const ui = $state({
 
 export const sampleImage = sampleArt;
 let activeSignal = null;
+// Bumped whenever a new analysis is started or opened, so a slower earlier request can never overwrite it.
+let loadToken = 0;
 let searchTimer = null;
 let historyRequest = 0;
 
@@ -241,6 +243,7 @@ export function removeFile() {
 
 export async function startAnalysis() {
     if (!(ui.file instanceof Blob) || ui.phase === "analyzing") return;
+    loadToken++;
     ui.phase = "analyzing";
     ui.progress = 0;
     ui.error = "";
@@ -293,6 +296,8 @@ export async function startAnalysis() {
 
 export async function cancelAnalysis() {
     if (activeSignal) activeSignal.cancelled = true;
+    loadToken++;
+    ui.loadingResult = false;
     const id = ui.analysis?.id;
     if (id) await analyses.remove(id).catch(() => {});
     activeSignal = null;
@@ -345,6 +350,8 @@ export async function loadHistory() {
 
 export async function loadAnalysisById(id) {
     if (activeSignal) activeSignal.cancelled = true;
+    const token = ++loadToken;
+    const stale = () => token !== loadToken;
     ui.loadingResult = true;
     ui.phase = "analyzing";
     ui.error = "";
@@ -356,6 +363,7 @@ export async function loadAnalysisById(id) {
     resetResult();
     try {
         let payload = await analyses.get(id);
+        if (stale()) return;
         const file = payload.file ?? {};
         ui.file = {
             name: file.filename ?? file.name ?? "Analyzed image",
@@ -379,7 +387,7 @@ export async function loadAnalysisById(id) {
                 },
                 signal,
             );
-            if (signal.cancelled) return;
+            if (signal.cancelled || stale()) return;
             if (activeSignal === signal) activeSignal = null;
         }
         if (payload.status === "failed")
@@ -387,13 +395,14 @@ export async function loadAnalysisById(id) {
         setFinalAnalysis(payload);
         ui.phase = "results";
     } catch (error) {
+        if (stale()) return;
         ui.errorTitle = "Unable to load analysis";
         ui.error = errorMessage(error);
         ui.phase = "upload";
         // ui.file was only a description of the stored image, not an uploadable File.
         ui.file = null;
     } finally {
-        ui.loadingResult = false;
+        if (!stale()) ui.loadingResult = false;
     }
 }
 

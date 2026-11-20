@@ -70,6 +70,10 @@ class MetaController extends Controller
     {
         $h = $ml->health();
 
-        return response()->json(['app' => 'ok', 'ml' => ['status' => $h['status'] ?? 'unknown', 'model_loaded' => (bool) ($h['model_loaded'] ?? false)]]);
+        return response()->json(['app' => 'ok', 'ml' => [
+            'status' => $h['status'] ?? 'unknown',
+            'model_loaded' => (bool) ($h['model_loaded'] ?? false),
+            'metadata_only' => (bool) ($h['metadata_only'] ?? false),
+        ]]);
     }
 }

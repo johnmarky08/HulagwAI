@@ -17,6 +17,20 @@
         formatDate,
     } from "../official/controller.svelte.js";
     import LoginGate from "./Components/LoginGate.svelte";
+
+    // Compact pager: first, last and the pages around the current one ("…" for gaps).
+    const pageList = $derived.by(() => {
+        const last = Math.max(1, ui.meta.last_page);
+        const current = ui.meta.page;
+        const wanted = new Set([1, last, current - 1, current, current + 1]);
+        const pages = [...wanted].filter((p) => p >= 1 && p <= last).sort((a, b) => a - b);
+        const out = [];
+        pages.forEach((p, i) => {
+            if (i && p - pages[i - 1] > 1) out.push(`gap-${p}`);
+            out.push(p);
+        });
+        return out;
+    });
 </script>
 
 <svelte:head><title>HulagwAI · Analysis History</title></svelte:head>
@@ -354,22 +368,33 @@
                         >Showing {ui.meta.from ?? 0}–{ui.meta.to ?? 0} of {ui
                             .meta.total} analyses</span
                     >
-                    <div class="flex items-center gap-2">
+                    <nav
+                        class="flex flex-wrap items-center gap-2"
+                        aria-label="History pages"
+                    >
                         <button
                             class="text-white disabled:opacity-40"
-                            disabled={ui.meta.page <= 1}
-                            onclick={previousHistoryPage}>Previous</button
-                        >{#each Array.from({ length: Math.max(1, ui.meta.last_page) }, (_, index) => index + 1) as page}<button
-                                class="px-1 text-white"
-                                class:text-indigo-400={ui.meta.page === page}
-                                data-page={page}
-                                onclick={handleHistoryPage}>{page}</button
-                            >{/each}<button
+                            disabled={ui.meta.page <= 1 || ui.loadingHistory}
+                            onclick={previousHistoryPage}>‹ Previous</button
+                        >{#each pageList as page (page)}{#if typeof page === "string"}<span
+                                    class="px-1 text-slate-500"
+                                    aria-hidden="true">…</span
+                                >{:else}<button
+                                    class={`px-1 ${ui.meta.page === page ? "font-bold text-indigo-400" : "text-white"}`}
+                                    aria-current={ui.meta.page === page
+                                        ? "page"
+                                        : undefined}
+                                    aria-label={`Page ${page}`}
+                                    data-page={page}
+                                    disabled={ui.loadingHistory}
+                                    onclick={handleHistoryPage}>{page}</button
+                                >{/if}{/each}<button
                             class="text-white disabled:opacity-40"
-                            disabled={ui.meta.page >= ui.meta.last_page}
+                            disabled={ui.meta.page >= ui.meta.last_page ||
+                                ui.loadingHistory}
                             onclick={nextHistoryPage}>Next ›</button
                         >
-                    </div>
+                    </nav>
                 </div>
             </section>
         </LoginGate>

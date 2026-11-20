@@ -98,4 +98,4 @@ The browser extension (image scanner) uses a short-lived pairing code rather tha
 The exchange, extension upload/poll, and revoke endpoints bypass cookie CSRF validation because they require a one-time code or bearer token. Keep the token private; never put it in logs. The extension only scans images the user picks from the right-click menu, after a confirmation click.
 
 ## Misc
-`GET /model` (active model summary for the About page) · `GET /health` (`{app, ml:{status,model_loaded}}`).
+`GET /model` (active model summary for the About page) · `GET /health` (`{app, ml:{status,model_loaded,metadata_only}}`).

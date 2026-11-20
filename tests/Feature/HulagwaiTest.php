@@ -100,7 +100,7 @@ class HulagwaiTest extends TestCase
         $row = Analysis::where('uuid', $id)->firstOrFail();
         $this->assertSame('done', $row->status->value);
         $this->assertSame('secret_name.png', $row->original_name);
-        $raw = \DB::table('analyses')->where('uuid', $id)->first();
+        $raw = \Illuminate\Support\Facades\DB::table('analyses')->where('uuid', $id)->first();
         $this->assertStringNotContainsString('secret_name', $raw->original_name, 'filename must be encrypted at rest');
         $this->assertStringNotContainsString('ai_generated', (string) $raw->details);
         $this->assertCount(4, Storage::disk('local')->allFiles('vault'));
@@ -358,5 +358,41 @@ class HulagwaiTest extends TestCase
         \Illuminate\Support\Facades\Queue::fake();
         $this->actingAs(User::factory()->create())->postJson('/api/v1/analyses', ['image' => $this->png('q.png')])
             ->assertStatus(202)->assertJsonPath('status', 'queued')->assertJsonMissingPath('result');
+    }
+
+    public function test_failed_guest_analyses_do_not_lock_out_new_uploads(): void
+    {
+        // Two failed in-flight guest rows listed in the session used to hit the pending limit (2) for 15 minutes.
+        $ids = [];
+        foreach (['01HZZZZZZZZZZZZZZZZZZZZZZ1', '01HZZZZZZZZZZZZZZZZZZZZZZ2'] as $id) {
+            Analysis::create([
+                'uuid' => $id, 'user_id' => null, 'status' => 'failed', 'stage' => 'failed', 'progress' => 0,
+                'sha256' => str_repeat('a', 64), 'original_name' => 'x.png', 'mime_type' => 'image/png', 'format' => 'PNG',
+                'width' => 32, 'height' => 32, 'size_bytes' => 10, 'error_code' => 'ml_error',
+            ]);
+            $ids[] = $id;
+        }
+
+        $this->withSession(['guest.pending' => $ids])
+            ->postJson('/api/v1/analyses', ['image' => $this->png()])
+            ->assertOk()->assertJsonPath('status', 'done');
+    }
+
+    public function test_json_login_returns_the_intended_same_site_path(): void
+    {
+        $user = User::factory()->create(['password' => 'Password12345']);
+
+        $this->get('/extension/connect')->assertRedirect('/login'); // remembers the intended page
+        $this->postJson('/login', ['email' => $user->email, 'password' => 'Password12345'])
+            ->assertOk()->assertJsonPath('redirect', '/extension/connect');
+    }
+
+    public function test_json_login_never_returns_an_off_site_redirect(): void
+    {
+        $user = User::factory()->create(['password' => 'Password12345']);
+
+        $this->withSession(['url.intended' => 'https://evil.example/phish'])
+            ->postJson('/login', ['email' => $user->email, 'password' => 'Password12345'])
+            ->assertOk()->assertJsonPath('redirect', '/dashboard');
     }
 }

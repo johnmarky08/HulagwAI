@@ -81,7 +81,7 @@
                 {form.error}
             </p>
         {/if}
-        <form class="mt-6 space-y-4" onsubmit={submitLogin}>
+        <form class="mt-6 space-y-4" onsubmit={(event) => submitLogin(event, true)}>
             <label class="block text-sm font-medium text-slate-200"
                 >Email
                 <input

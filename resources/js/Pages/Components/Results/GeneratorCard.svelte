@@ -39,7 +39,7 @@
 
     {#if attribution?.available}
         <ul class="mt-5 space-y-3" aria-label="Closest generator families">
-            {#each attribution.top as cand, i (cand.family)}
+            {#each attribution.top as cand, i (`${cand.family}-${i}`)}
                 <li>
                     <div class="flex justify-between text-sm">
                         <span class:font-semibold={i === 0 && !unknown}>{cand.label}</span>

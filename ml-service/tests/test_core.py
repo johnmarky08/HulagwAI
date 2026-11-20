@@ -109,7 +109,8 @@ def test_provenance_only_raises_the_score():
 
 # ---------------------------------------------------------------- metrics vs scikit-learn
 def test_metrics_match_sklearn():
-    from sklearn import metrics as S
+    # scikit-learn is a training dependency (requirements-train.txt), not part of the serving install.
+    S = pytest.importorskip("sklearn.metrics")
     rng = np.random.default_rng(0)
     y = rng.integers(0, 2, 500)
     p = np.clip(y * 0.6 + rng.normal(0.2, 0.25, 500), 0.001, 0.999)
