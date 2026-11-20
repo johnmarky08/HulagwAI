@@ -8,6 +8,7 @@
     import { loginForm } from "../official/authPages.svelte.js";
     import josh from "../../images/Joshua.jpg";
     import nico from "../../images/nico.png";
+    import marky from "../../images/marky.jpg";
 
     let loginOpen = $state(false);
 
@@ -238,10 +239,10 @@
             </div>
             <div class="grid gap-5 md:grid-cols-3">
                 {#each [
-                { number: "01", name: "Joshua Bartolome", role: "Frontend developer", description: "Builds the upload experience, result views, and responsive interface.", img: josh }, 
-                { number: "02", name: "John Marky Natividad", role: "Backend developer", description: "Connects analysis requests, stores results, and supports analysis history." }, 
-                { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project.", img: nico }
-                ] as developer}
+                    { number: "01", name: "Joshua Bartolome", role: "Frontend developer", description: "Builds the upload experience, result views, and responsive interface.", img: josh }, 
+                    { number: "02", name: "John Marky Natividad", role: "Backend developer", description: "Connects analysis requests, stores results, and supports analysis history.", img: marky }, 
+                    { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project.", img: nico }] 
+                    as developer}
                     <article
                         class="rounded-2xl border border-indigo-500/40 bg-slate-900 p-6"
                     >
