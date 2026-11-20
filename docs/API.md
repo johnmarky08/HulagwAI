@@ -59,5 +59,15 @@ Re-encoded copy (metadata stripped). Guests only get the 480 px `thumb`.
 Same shape for guests (session) and users (MySQL).
 ### `GET /history/export?format=csv|json` · `DELETE /history`
 
+## Browser extension (test prototype)
+The unpacked Facebook scanner uses a short-lived pairing code rather than web-session cookies:
+
+- `POST /api/v1/extension/pair` (signed-in web session + CSRF) creates a single-use 32-character code valid for 3 minutes. The signed-in pairing page is `/extension/connect`.
+- `POST /api/v1/extension/exchange` (`{"code":"..."}`) consumes the code once and returns a random bearer token, valid for 30 days. Only a SHA-256 hash is stored server-side.
+- `POST /api/v1/extension/analyses` (multipart `image`) and `GET /api/v1/extension/analyses/{id}` require `Authorization: Bearer <token>` and reuse the regular analysis pipeline.
+- `DELETE /api/v1/extension/token` revokes the current extension token.
+
+The exchange, extension upload/poll, and revoke endpoints bypass cookie CSRF validation because they require a one-time code or bearer token. Keep the token private; never put it in logs. The extension only scans manually selected Facebook images after a confirmation click.
+
 ## Misc
 `GET /model` (active model summary for the About page) · `GET /health` (`{app, ml:{status,model_loaded}}`).

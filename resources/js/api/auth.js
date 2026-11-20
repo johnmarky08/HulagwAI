@@ -13,6 +13,12 @@ export const auth = {
     async logout() {
         return (await web.post("/logout")).data;
     },
+    async updateProfile(name, email) {
+        return (await http.put("/account/profile", { name, email })).data;
+    },
+    async changePassword(current_password, password, password_confirmation) {
+        return (await http.put("/account/password", { current_password, password, password_confirmation })).data;
+    },
     async deleteAccount(password) {
         return (await http.post("/account/delete", { password })).data;
     },

@@ -1,16 +1,88 @@
 import { auth } from "../api/auth";
+import { session } from "../api/session.svelte.js";
 import { errorMessage } from "../api/client";
 
-export const profile = $state({ me: null, loading: true, deleting: false, password: "", error: "" });
+export const profile = $state({
+    me: null,
+    name: "",
+    email: "",
+    loading: true,
+    saving: false,
+    saved: false,
+    changingPassword: false,
+    passwordFormOpen: false,
+    currentPassword: "",
+    newPassword: "",
+    newPasswordConfirmation: "",
+    deleting: false,
+    confirmDeleteOpen: false,
+    password: "",
+    error: "",
+});
 
 export async function loadProfile() {
+    // Show the known account straight away on navigation; the fresh /me result then replaces it.
+    const cached = session.value;
+    if (cached?.authenticated) {
+        profile.me = { ...cached };
+        profile.name = cached.user.name;
+        profile.email = cached.user.email;
+        profile.loading = false;
+    }
     try {
-        profile.me = await auth.me();
-        if (!profile.me?.authenticated) window.location.assign("/login");
+        const fresh = await auth.me();
+        session.value = fresh;
+        profile.me = fresh;
+        if (!profile.me?.authenticated) {
+            window.location.assign("/login");
+            return;
+        }
+        profile.name = profile.me.user.name;
+        profile.email = profile.me.user.email;
     } catch {
         window.location.assign("/login");
     } finally {
         profile.loading = false;
+    }
+}
+
+export async function saveProfile(event) {
+    event.preventDefault();
+    profile.saving = true;
+    profile.saved = false;
+    profile.error = "";
+    try {
+        const result = await auth.updateProfile(profile.name, profile.email);
+        profile.me.user = result.user;
+        profile.name = result.user.name;
+        profile.email = result.user.email;
+        profile.saved = true;
+        window.dispatchEvent(new CustomEvent("hulagwai:profile-updated", { detail: result.user }));
+    } catch (error) {
+        profile.error = errorMessage(error);
+    } finally {
+        profile.saving = false;
+    }
+}
+
+export async function changeProfilePassword(event) {
+    event.preventDefault();
+    profile.changingPassword = true;
+    profile.error = "";
+    try {
+        await auth.changePassword(
+            profile.currentPassword,
+            profile.newPassword,
+            profile.newPasswordConfirmation,
+        );
+        profile.passwordFormOpen = false;
+        profile.currentPassword = "";
+        profile.newPassword = "";
+        profile.newPasswordConfirmation = "";
+    } catch (error) {
+        profile.error = errorMessage(error);
+    } finally {
+        profile.changingPassword = false;
     }
 }
 

@@ -13,6 +13,11 @@ class PageController extends Controller
         return Inertia::render('Home');
     }
 
+    public function dashboard(): Response
+    {
+        return Inertia::render('Dashboard');
+    }
+
     public function detection(): Response
     {
         return Inertia::render('Detection');
@@ -23,8 +28,23 @@ class PageController extends Controller
         return Inertia::render('History');
     }
 
+    public function extension(): Response
+    {
+        return Inertia::render('Extension');
+    }
+
     public function about(): Response
     {
         return Inertia::render('About');
+    }
+
+    public function profile(): Response
+    {
+        return Inertia::render('Profile');
+    }
+
+    public function extensionConnect(): Response
+    {
+        return Inertia::render('ExtensionConnect');
     }
 }

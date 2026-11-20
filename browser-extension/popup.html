@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>HulagwAI Image Scanner</title>
+        <link rel="stylesheet" href="popup.css" />
+    </head>
+    <body>
+        <main>
+            <div id="settings-view">
+            <header>
+                <span class="brand-mark" aria-hidden="true"
+                    ><img src="icons/icon-48.png" alt=""
+                /></span>
+                <div>
+                    <p class="eyebrow">HulagwAI · BROWSER EXTENSION</p>
+                    <h1>Image scanner settings</h1>
+                    <p class="subtitle">
+                        Pair your account, manage scan permissions, and review
+                        recent activity.
+                    </p>
+                </div>
+            </header>
+
+            <div class="setup-grid">
+                <section class="setup-card">
+                    <h2>Connect HulagwAI</h2>
+                    <p class="card-copy">
+                        Pair this browser with your account to save scan results
+                        to your history.
+                    </p>
+                    <form id="site-form">
+                        <label for="backend-url">HulagwAI site address</label>
+                        <input
+                            id="backend-url"
+                            type="url"
+                            placeholder="https://your-hulagwai-site"
+                            autocomplete="url"
+                            required
+                        />
+                        <button class="primary" type="submit">
+                            Open secure pairing page
+                        </button>
+                    </form>
+                    <p id="connection-status" class="status" role="status">
+                        Sign in to HulagwAI, then pair this browser.
+                    </p>
+                </section>
+
+                <section class="setup-card">
+                    <h2>Pair with a one-time code</h2>
+                    <p class="card-copy">
+                        After signing in, copy the one-time code from the secure
+                        HulagwAI pairing page and paste it here.
+                    </p>
+                    <form id="pair-form">
+                        <label for="pair-code">One-time pairing code</label>
+                        <input
+                            id="pair-code"
+                            type="text"
+                            inputmode="text"
+                            autocapitalize="none"
+                            autocomplete="one-time-code"
+                            maxlength="32"
+                            placeholder="Paste 32-character code"
+                            required
+                        />
+                        <button id="pair-button" class="primary" type="submit">
+                            Pair extension
+                        </button>
+                    </form>
+                </section>
+            </div>
+
+            <section class="enable-row" aria-label="Scanning setting">
+                <div>
+                    <strong>Enable right-click scanning</strong>
+                    <p>
+                        Choose an image's context menu on any site. Nothing
+                        uploads until you confirm.
+                    </p>
+                </div>
+                <label class="switch-label" for="enabled">
+                    <input id="enabled" type="checkbox" disabled />
+                    <span class="switch" aria-hidden="true"></span>
+                    <span class="sr-only">Enable right-click scanning</span>
+                </label>
+            </section>
+            <div class="connected-row">
+                <span id="token-status">Not paired</span
+                ><button
+                    id="disconnect"
+                    type="button"
+                    class="text-button"
+                    hidden
+                >
+                    Disconnect
+                </button>
+            </div>
+
+            <section class="log-section">
+                <div class="log-heading">
+                    <div>
+                        <h2>Recent scan activity</h2>
+                        <p class="card-copy">
+                            Only status, image type/size, and analysis ID are
+                            logged. No images or page URLs.
+                        </p>
+                    </div>
+                    <div class="log-actions">
+                        <button id="show-history" type="button" class="text-button">
+                            Show history
+                        </button>
+                        <button id="clear-log" type="button" class="text-button">
+                            Clear log
+                        </button>
+                    </div>
+                </div>
+                <div class="gate locked" data-gate>
+                    <div class="gate-content" inert>
+                        <ol id="log-list" class="log-list" aria-live="polite"></ol>
+                    </div>
+                    <div class="gate-overlay">
+                    <strong>Log in to use</strong>
+                    <p>Don't worry, you can still use the other features.</p>
+                    <button class="secondary gate-pair" type="button">Pair extension</button>
+                </div>
+                </div>
+            </section>
+            <footer>
+                Image uploads require your confirmation. Image-host access can
+                be revoked in browser settings.
+            </footer>
+            </div>
+
+            <section id="history-view" class="review history-view" aria-labelledby="history-title" hidden>
+                <header class="review-header">
+                    <span class="brand-mark" aria-hidden="true"
+                        ><img src="icons/icon-48.png" alt=""
+                    /></span>
+                    <div>
+                        <p class="eyebrow">HulagwAI · SCAN HISTORY</p>
+                        <h1 id="history-title">Scan history</h1>
+                    </div>
+                </header>
+                <div class="gate locked" data-gate>
+                    <div class="gate-content" inert>
+                        <div id="history-list-panel">
+                            <div class="history-toolbar">
+                                <button id="history-back" type="button" class="text-button">
+                                    ← Back to settings
+                                </button>
+                                <span id="history-count" class="history-count"></span>
+                            </div>
+                            <p class="card-copy">
+                                Scan attempts saved in this browser. Images and page URLs are
+                                never stored here. Click a picture to see its analysis.
+                            </p>
+                            <ol id="history-list" class="log-list" aria-live="polite"></ol>
+                            <div class="history-actions">
+                                <button id="history-clear" type="button" class="text-button">
+                                    Clear history
+                                </button>
+                                <button id="open-site-history" class="secondary" type="button" disabled>
+                                    Open full history on HulagwAI
+                                </button>
+                                <p id="history-site-status" class="card-copy" role="status"></p>
+                            </div>
+                        </div>
+                        <div id="analysis-panel" hidden>
+                            <div class="history-toolbar">
+                                <button id="analysis-back" type="button" class="text-button">
+                                    ← All attempts
+                                </button>
+                            </div>
+                            <figure class="analysis-figure">
+                                <img id="analysis-image" alt="Analyzed image" hidden />
+                                <figcaption id="analysis-file"></figcaption>
+                            </figure>
+                            <dl class="details">
+                                <div>
+                                    <dt>Result</dt>
+                                    <dd id="analysis-label">Loading…</dd>
+                                </div>
+                                <div>
+                                    <dt>Confidence</dt>
+                                    <dd id="analysis-confidence">—</dd>
+                                </div>
+                                <div>
+                                    <dt>AI probability</dt>
+                                    <dd id="analysis-ai">—</dd>
+                                </div>
+                                <div>
+                                    <dt>Analyzed</dt>
+                                    <dd id="analysis-date">—</dd>
+                                </div>
+                                <div>
+                                    <dt>Analysis ID</dt>
+                                    <dd id="analysis-id">—</dd>
+                                </div>
+                            </dl>
+                            <p id="analysis-status" class="status" role="status" aria-live="polite"></p>
+                            <div class="history-actions">
+                                <button id="analysis-open" class="secondary" type="button">
+                                    Open full report on HulagwAI
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gate-overlay">
+                    <strong>Log in to use</strong>
+                    <p>Don't worry, you can still use the other features.</p>
+                    <button class="secondary gate-pair" type="button">Pair extension</button>
+                </div>
+                </div>
+            </section>
+
+            <section id="review-view" class="review" aria-label="Confirm image scan" hidden>
+                <header class="review-header">
+                    <span class="brand-mark" aria-hidden="true"
+                        ><img src="icons/icon-48.png" alt=""
+                    /></span>
+                    <div>
+                        <p class="eyebrow">HulagwAI image check</p>
+                        <h1>Scan this image?</h1>
+                    </div>
+                </header>
+                <p class="card-copy">
+                    You chose this image. Review it below; it is not uploaded
+                    until you confirm.
+                </p>
+                <div class="image-preview" aria-label="Selected image preview">
+                    <p id="preview-placeholder">
+                        Grant access to the image host to show a preview here.
+                    </p>
+                    <img
+                        id="selected-preview"
+                        alt="Selected image preview"
+                        referrerpolicy="no-referrer"
+                        hidden
+                    />
+                </div>
+                <dl class="details">
+                    <div>
+                        <dt>Image host</dt>
+                        <dd id="review-host">Checking…</dd>
+                    </div>
+                    <div>
+                        <dt>HulagwAI account</dt>
+                        <dd id="review-pair-state">Checking pairing…</dd>
+                    </div>
+                </dl>
+                <div id="permission-box" class="permission-box" hidden>
+                    <p id="permission-copy">
+                        Allow HulagwAI Scanner to fetch the selected image from
+                        this host. Access is requested only for this image host.
+                    </p>
+                    <button id="grant-access" class="secondary" type="button">
+                        Allow image-host access
+                    </button>
+                </div>
+                <p id="review-status" class="status" role="status" aria-live="polite"></p>
+                <div class="review-actions">
+                    <button id="confirm" class="primary" type="button" disabled>
+                        Send image for analysis
+                    </button>
+                    <button id="cancel" class="cancel" type="button">
+                        Cancel
+                    </button>
+                </div>
+                <p class="privacy">
+                    Only the selected image is uploaded after you confirm. The
+                    extension does not send your page URL or browsing history.
+                </p>
+            </section>
+        </main>
+        <script src="popup.js"></script>
+    </body>
+</html>

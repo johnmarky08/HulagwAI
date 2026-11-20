@@ -84,7 +84,7 @@
                                 bind:value={form.password}
                                 autocomplete="new-password"
                                 required
-                                minlength="8"
+                                minlength="10"
                             /><button
                                 type="button"
                                 class="absolute inset-y-0 right-3 text-xs text-slate-400 hover:text-indigo-300"
@@ -95,9 +95,21 @@
                                 >{form.showPassword ? "Hide" : "Show"}</button
                             ></span
                         ><span class="mt-1 block text-xs text-slate-500"
-                            >Use at least 8 characters.</span
+                            >Use at least 10 characters, with uppercase, lowercase, and a number.</span
                         ></label
                     >
+                    <label class="block text-sm font-medium">
+                        Confirm password
+                        <input
+                            class="auth-input mt-2 block w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                            type="password"
+                            placeholder="Re-enter your password"
+                            bind:value={form.confirm}
+                            autocomplete="new-password"
+                            required
+                            minlength="10"
+                        />
+                    </label>
                     <button
                         class="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
                         disabled={form.busy}

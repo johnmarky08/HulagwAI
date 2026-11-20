@@ -13,6 +13,7 @@
         exportHistory,
         formatDate,
     } from "../official/controller.svelte.js";
+    import LoginGate from "./Components/LoginGate.svelte";
 </script>
 
 <svelte:head><title>HulagwAI · Analysis History</title></svelte:head>
@@ -29,40 +30,24 @@
                 Search, filter, and revisit your previous image analyses.
             </p>
         </div>
-        <section class="mb-7 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <article
-                class="rounded-xl border border-slate-700 bg-slate-900 p-4"
-            >
-                <span class="text-xs text-slate-400">Total analyses</span
-                ><strong
-                    class="mt-2 block text-3xl font-extrabold text-indigo-400"
-                    >{ui.stats.total}</strong
-                >
-            </article>
-            <article
-                class="rounded-xl border border-slate-700 bg-slate-900 p-4"
-            >
-                <span class="text-xs text-slate-400">Likely real</span><strong
-                    class="mt-2 block text-3xl font-extrabold text-emerald-400"
-                    >{ui.stats.likely_real}</strong
-                >
-            </article>
-            <article
-                class="rounded-xl border border-slate-700 bg-slate-900 p-4"
-            >
-                <span class="text-xs text-slate-400">AI-generated</span><strong
-                    class="mt-2 block text-3xl font-extrabold text-rose-400"
-                    >{ui.stats.ai_generated}</strong
-                >
-            </article>
-            <article
-                class="rounded-xl border border-amber-900 bg-amber-950/30 p-4"
-            >
-                <span class="text-xs text-amber-400">Inconclusive</span><strong
-                    class="mt-2 block text-3xl font-extrabold text-amber-400"
-                    >{ui.stats.inconclusive}</strong
-                >
-            </article>
+        <LoginGate>
+        <section class="mb-7 grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Analysis summary">
+            {#each [
+                { label: "Total analyses", value: ui.stats.total, tone: "indigo", icon: "▧", caption: "Processed analyses" },
+                { label: "Likely real", value: ui.stats.likely_real, tone: "emerald", icon: "◉", caption: "Likely authentic" },
+                { label: "AI-generated", value: ui.stats.ai_generated, tone: "rose", icon: "✳", caption: "Likely synthetic" },
+                { label: "Inconclusive", value: ui.stats.inconclusive, tone: "amber", icon: "⚠", caption: "Needs human review" },
+            ] as card (card.label)}
+                <article class="history-stat group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition duration-300 hover:-translate-y-1 hover:border-slate-700 hover:shadow-xl hover:shadow-indigo-950/30 sm:p-5" data-tone={card.tone}>
+                    <span class="absolute inset-x-0 top-0 h-1 bar" aria-hidden="true"></span>
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-[10px] font-semibold uppercase tracking-[.06em] text-slate-400 sm:text-xs sm:tracking-[.12em]">{card.label}</span>
+                        <span class="grid size-8 shrink-0 place-items-center rounded-xl border text-sm chip sm:size-9 sm:text-base" aria-hidden="true">{card.icon}</span>
+                    </div>
+                    <strong class="mt-3 block text-3xl font-extrabold tabular-nums sm:text-4xl value">{card.value}</strong>
+                    <span class="mt-1 block text-xs text-slate-400">{card.caption}</span>
+                </article>
+            {/each}
         </section>
         <div
             class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]"
@@ -142,12 +127,18 @@
                                     class:bg-indigo-950={index === 0}
                                     ><td class="p-2"
                                         ><div class="flex items-center gap-4">
-                                            <img
-                                                class="size-12 rounded-lg object-cover"
-                                                src={row.thumb_url ||
-                                                    sampleImage}
-                                                alt=""
-                                            /><span>{row.filename}</span>
+                                            <a
+                                                use:inertia
+                                                class="thumb-link shrink-0"
+                                                href={"/detect?analysis=" + row.id}
+                                                aria-label={`Open the analysis of ${row.filename}`}
+                                                ><img
+                                                    class="size-12 rounded-lg object-cover"
+                                                    src={row.thumb_url ||
+                                                        sampleImage}
+                                                    alt=""
+                                                /></a
+                                            ><span>{row.filename}</span>
                                         </div></td
                                     ><td class="p-3"
                                         ><span
@@ -190,7 +181,7 @@
                 {:else}
                     {#each ui.rows as row (row.id)}
                         <article class="mobile-history-card flex min-w-0 gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                            <img class="size-14 shrink-0 rounded-lg object-cover" src={row.thumb_url || sampleImage} alt="" />
+                            <a use:inertia class="thumb-link shrink-0" href={"/detect?analysis=" + row.id} aria-label={`Open the analysis of ${row.filename}`}><img class="size-14 rounded-lg object-cover" src={row.thumb_url || sampleImage} alt="" /></a>
                             <div class="min-w-0 flex-1">
                                 <div class="flex min-w-0 items-start justify-between gap-2">
                                     <div class="min-w-0">
@@ -233,5 +224,31 @@
                 </div>
             </div>
         </section>
+        </LoginGate>
     </main>
 </Layout>
+
+<style>
+    /* Dashboard colour coding for the summary cards. */
+    .history-stat[data-tone="indigo"] { --c: #818cf8; --bar: #6366f1; }
+    .history-stat[data-tone="emerald"] { --c: #34d399; --bar: #10b981; }
+    .history-stat[data-tone="rose"] { --c: #fb7185; --bar: #f43f5e; }
+    .history-stat[data-tone="amber"] { --c: #fbbf24; --bar: #f59e0b; }
+    .history-stat .bar { background: var(--bar); }
+    .history-stat .chip { border-color: color-mix(in srgb, var(--c) 35%, transparent); background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c); }
+    .history-stat .value { color: var(--c); }
+
+    .thumb-link {
+        border-radius: 0.5rem;
+    }
+    .thumb-link:hover img,
+    .thumb-link:focus-visible img {
+        box-shadow: 0 0 0 2px #818cf8;
+    }
+    .thumb-link:focus-visible {
+        outline: none;
+    }
+    .thumb-link img {
+        transition: box-shadow 0.15s ease;
+    }
+</style>

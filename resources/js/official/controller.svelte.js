@@ -25,6 +25,7 @@ function getPage() {
             "/dashboard": "dashboard",
             "/detect": "detect",
             "/history": "history",
+            "/extension": "extension",
             "/about": "about",
         }[location.pathname] ?? "home"
     );

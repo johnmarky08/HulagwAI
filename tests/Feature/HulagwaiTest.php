@@ -203,6 +203,7 @@ class HulagwaiTest extends TestCase
         $r = $this->get('/about');
         $r->assertHeader('X-Content-Type-Options', 'nosniff')->assertHeader('X-Frame-Options', 'DENY');
         $this->assertStringContainsString("frame-ancestors 'none'", $r->headers->get('Content-Security-Policy'));
+        $this->assertStringNotContainsString('[::1]', $r->headers->get('Content-Security-Policy'));
         $this->getJson('/api/v1/analyses/not-an-id')->assertNotFound()->assertJsonPath('code', 'not_found');
         $this->postJson('/api/v1/account/delete', ['password' => 'x'])->assertUnauthorized();
     }

@@ -16,8 +16,8 @@ class SecurityHeaders
         // Anything that is not production may talk to the Vite dev server on ANY local port
         // (Vite can listen on localhost, 127.0.0.1 or [::1] and may pick 5174, 5175 ... if 5173 is busy).
         $dev = ! app()->isProduction();
-        $vite = $dev ? ' http://localhost:* http://127.0.0.1:* http://[::1]:*' : '';
-        $ws = $dev ? ' ws://localhost:* ws://127.0.0.1:* ws://[::1]:*' : '';
+        $vite = $dev ? ' http://localhost:* http://127.0.0.1:*' : '';
+        $ws = $dev ? ' ws://localhost:* ws://127.0.0.1:*' : '';
 
         $csp = implode('; ', [
             "default-src 'self'",

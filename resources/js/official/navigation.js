@@ -3,5 +3,5 @@ export const navigation = [
     { id: "dashboard", label: "Dashboard", href: "/dashboard" },
     { id: "detect", label: "Image Detection", href: "/detect" },
     { id: "history", label: "History", href: "/history" },
-    
+    { id: "extension", label: "Extension", href: "/extension" },
 ];

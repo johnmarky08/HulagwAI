@@ -662,7 +662,7 @@ html:has(.app-shell.light-mode)::-webkit-scrollbar-thumb:hover {
     .upload-selected > div:last-child > * { justify-content: center; padding: .7rem .55rem; font-size: .75rem; text-align: center; }
     .app-shell main > section[class*="grid"][class*="lg:grid-cols-2"] { gap: 1rem; }
     .app-shell main > section[class*="grid"][class*="lg:grid-cols-2"] article { min-width: 0; padding: 1rem; }
-    .app-shell main > section[class*="grid"][class*="lg:grid-cols-2"] img { height: 220px; }
+    .app-shell main > section[class*="grid"][class*="lg:grid-cols-2"] img { height: auto; }
     .app-shell main > section[class*="grid"][class*="lg:grid-cols-2"] h2 { font-size: 1.45rem; }
     .app-shell main > section[class*="grid"][class*="lg:grid-cols-2"] article > div.flex.justify-between { gap: .75rem; overflow-wrap: anywhere; font-size: .7rem; }
     .app-shell main > section[class*="grid"][class*="lg:grid-cols-2"] dl dd { min-width: 0; overflow-wrap: anywhere; }
@@ -771,4 +771,79 @@ html:has(.app-shell.light-mode)::-webkit-scrollbar-thumb:hover {
     .app-shell main > section:first-child .hero-art { height: 205px; }
     .app-shell main > section:first-child .hero-image { height: 160px; }
     .app-shell main > .mx-auto.mb-12 > div { font-size: .62rem; }
+}
+
+/* Light palette: remap dark translucent cards and amber text that the earlier rules missed. */
+.app-shell.light-mode :is([class~="bg-slate-900/60"], [class~="bg-slate-950/60"]) {
+    background-color: var(--light-surface);
+}
+.app-shell.light-mode [class~="bg-indigo-950/20"] {
+    background-color: #eef0ff;
+}
+.app-shell.light-mode :is([class~="bg-indigo-500/10"], [class~="bg-indigo-500/20"]) {
+    background-color: #e0e7ff;
+}
+.app-shell.light-mode [class~="text-amber-100/80"] {
+    color: #78350f;
+}
+.app-shell.light-mode [class~="border-indigo-500/35"] {
+    border-color: #c7d2fe;
+}
+
+/* Extension page: darker, high-contrast text on a light hero and cards. */
+.app-shell.light-mode .extension-page [class~="text-white"]:not([class*="bg-"]) {
+    color: var(--light-text);
+}
+.app-shell.light-mode .extension-page [class~="text-slate-300"] {
+    color: #2b2720;
+}
+.app-shell.light-mode .extension-page [class~="text-slate-400"] {
+    color: #3f3a33;
+}
+.app-shell.light-mode .extension-page [class~="text-slate-500"] {
+    color: #4f4a42;
+}
+.app-shell.light-mode .extension-page .extension-hero {
+    border-color: #c7d2fe;
+    background-image: linear-gradient(135deg, #eef0ff 0%, #fffdf8 58%, #f8f4ec 100%);
+    box-shadow: 0 24px 60px -30px rgb(67 56 202 / 35%);
+}
+.app-shell.light-mode .extension-page .hero-glow {
+    display: none;
+}
+
+/* Pointer cursor on every clickable element; disabled controls show not-allowed. */
+a[href],
+area[href],
+button,
+[role="button"],
+[role="tab"],
+[role="link"],
+[role="menuitem"],
+select,
+summary,
+label:has(input:not(:disabled)),
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="file"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+    cursor: pointer;
+}
+button:disabled,
+[aria-disabled="true"],
+input:disabled {
+    cursor: not-allowed;
+}
+
+/* Dashboard banner copy must stay readable on the light hero. */
+.app-shell.light-mode .dashboard-banner .dashboard-banner-text {
+    color: #3b3650;
+}
+.app-shell.light-mode .dashboard-banner {
+    border-color: #a5b4fc;
+    background: linear-gradient(90deg, #f8efe0, #e8e8fb);
+    color: #1e1b2e;
 }

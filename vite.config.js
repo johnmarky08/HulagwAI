@@ -10,11 +10,18 @@ export default defineConfig({
             input: ["resources/css/app.css", "resources/js/app.js"],
             refresh: true,
         }),
-        svelte(),
+        svelte({
+            configFile: "./svelte.config.js",
+        }),
         tailwindcss(),
     ],
     server: {
         host: "127.0.0.1",
+        port: 5173,
+        strictPort: false,
+        hmr: {
+            host: "127.0.0.1",
+        },
         watch: {
             ignored: ["**/storage/framework/views/**"],
         },

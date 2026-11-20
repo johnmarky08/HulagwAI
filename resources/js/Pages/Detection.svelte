@@ -180,11 +180,19 @@
                 <article
                     class="rounded-2xl border border-indigo-500/50 bg-slate-900 p-4"
                 >
-                    <img
-                        class="h-300px w-full rounded-xl object-cover"
-                        src={ui.preview || ui.resultPreview}
-                        alt="Analysis in progress"
-                    />
+                    <div class="scan-image-frame relative isolate mx-auto w-full overflow-hidden rounded-xl sm:w-fit"
+                        class:scan-frame-dark={!ui.light}
+                        class:scan-frame-light={ui.light}>
+                        <img
+                            class="scan-image block h-auto w-full rounded-xl object-contain sm:w-auto sm:max-w-full"
+                            class:scan-image-dark={!ui.light}
+                            class:scan-image-light={ui.light}
+                            src={ui.preview || ui.resultPreview}
+                            alt="Authenticity scan in progress"
+                        />
+                        <div class="scan-image-tint pointer-events-none absolute inset-0" class:scan-tint-dark={!ui.light} class:scan-tint-light={ui.light} aria-hidden="true"></div>
+                        <span class="scan-beam pointer-events-none absolute inset-x-0 top-0" class:scan-beam-dark={!ui.light} class:scan-beam-light={ui.light} aria-hidden="true"></span>
+                    </div>
                     <div class="mt-5 flex justify-between text-sm">
                         <span>{ui.file?.name}</span><span class="text-slate-400"
                             >{ui.file?.type.split("/").at(-1)?.toUpperCase()} · {(
@@ -260,7 +268,7 @@
                     class="rounded-2xl border border-indigo-500/40 bg-slate-950 p-3"
                 >
                     <img
-                        class="h-280px w-full rounded-xl object-cover"
+                        class="result-image mx-auto block h-auto w-full rounded-xl object-contain sm:w-auto sm:max-w-full"
                         src={ui.resultPreview || ui.preview}
                         alt="Analysis result"
                     />
@@ -336,3 +344,89 @@
         {/if}
     </main>
 </Layout>
+
+<style>
+    .upload-selected {
+        width: min(100%, 960px);
+        margin-inline: auto;
+    }
+
+    .upload-selected .upload-preview {
+        width: min(100%, 820px);
+        max-height: min(38vh, 340px);
+        margin-inline: auto;
+    }
+
+    /* The image sets the size (capped by max-height); the frame and overlays shrink to match it. */
+    .scan-image {
+        max-height: min(38vh, 300px);
+    }
+
+    @media (min-width: 1024px) {
+        .scan-image {
+            max-height: clamp(200px, 32vh, 260px);
+        }
+    }
+
+    /* Phones: full width, height follows the image. Larger screens: sized by height. */
+    .result-image {
+        max-height: min(34vh, 260px);
+    }
+    @media (min-width: 640px) {
+        .result-image {
+            max-height: min(26vh, 200px);
+        }
+    }
+
+    .scan-image-dark {
+        filter: saturate(1.48) contrast(1.14) hue-rotate(16deg) brightness(1.04);
+    }
+
+    .scan-image-light {
+        filter: saturate(1.42) sepia(0.16) hue-rotate(322deg) brightness(1.06) contrast(1.06);
+    }
+
+    .scan-frame-dark {
+        box-shadow: inset 0 0 0 2px rgb(129 140 248 / 55%), 0 0 30px rgb(99 102 241 / 30%);
+    }
+
+    .scan-frame-light {
+        box-shadow: inset 0 0 0 2px rgb(217 119 6 / 55%), 0 0 30px rgb(244 114 182 / 24%);
+    }
+
+    .scan-tint-dark {
+        background: linear-gradient(180deg, rgb(79 70 229 / 24%), rgb(34 211 238 / 12%) 52%, rgb(79 70 229 / 22%));
+    }
+
+    .scan-tint-light {
+        background: linear-gradient(180deg, rgb(251 191 36 / 22%), rgb(244 114 182 / 12%) 52%, rgb(251 191 36 / 22%));
+    }
+
+    .scan-beam {
+        z-index: 2;
+        height: 4px;
+        animation: scan-image-back-and-forth 2s ease-in-out infinite alternate;
+    }
+
+    .scan-beam-dark {
+        background: linear-gradient(90deg, transparent 0%, #a5b4fc 12%, #67e8f9 50%, #a5b4fc 88%, transparent 100%);
+        box-shadow: 0 0 12px 4px rgb(103 232 249 / 85%), 0 0 38px 12px rgb(99 102 241 / 55%);
+    }
+
+    .scan-beam-light {
+        background: linear-gradient(90deg, transparent 0%, #f59e0b 12%, #f43f5e 50%, #f59e0b 88%, transparent 100%);
+        box-shadow: 0 0 12px 4px rgb(251 191 36 / 90%), 0 0 38px 12px rgb(244 114 182 / 50%);
+    }
+
+    @keyframes scan-image-back-and-forth {
+        from { top: 0; }
+        to { top: calc(100% - 4px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .scan-beam {
+            top: 50%;
+            animation: none;
+        }
+    }
+</style>

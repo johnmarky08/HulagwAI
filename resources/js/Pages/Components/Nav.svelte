@@ -3,21 +3,25 @@
     import { onMount } from "svelte";
     import { fly } from "svelte/transition";
     import { navigation } from "../../official/navigation.js";
-    import { auth } from "../../api/auth";
+    import { session, refreshSession } from "../../api/session.svelte.js";
     import moonIcon from "../../../images/moon.svg";
     import sunIcon from "../../../images/sun.svg";
     import { ui, toggleTheme } from "../../official/controller.svelte.js";
 
     let { active = "home" } = $props();
-    let me = $state(null);
+    // Signed-in state comes from the shared session cache, so the username shows at once on navigation.
+    let me = $derived(session.value);
+    let accountLabel = $derived(me === undefined ? "Account" : me.authenticated ? (me.user?.name || "Account") : "Log in");
+    let accountHref = $derived(me === undefined || me.authenticated ? "/profile" : "/login");
     let menuOpen = $state(false);
 
-    onMount(async () => {
-        try {
-            me = await auth.me();
-        } catch {
-            me = null;
-        }
+    onMount(() => {
+        const updateUser = (event) => {
+            if (session.value?.user) session.value = { ...session.value, user: event.detail };
+        };
+        window.addEventListener("hulagwai:profile-updated", updateUser);
+        void refreshSession();
+        return () => window.removeEventListener("hulagwai:profile-updated", updateUser);
     });
 
     function closeMenu() {
@@ -73,9 +77,10 @@
 
         <a
             use:inertia
-            href={me?.authenticated ? "/profile" : "/login"}
-            class="hidden shrink-0 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm font-medium transition hover:border-indigo-400 hover:bg-indigo-950/70 md:inline-flex"
-            >♙ &nbsp;{me?.authenticated ? "Profile" : "Log in"}</a
+            href={accountHref}
+            title={me?.authenticated ? me.user?.name : accountLabel}
+            class="hidden max-w-48 shrink-0 items-center truncate rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm font-medium transition hover:border-indigo-400 hover:bg-indigo-950/70 md:inline-flex"
+            >♙ &nbsp;{accountLabel}</a
         >
 
         <button
@@ -140,10 +145,11 @@
             >
                 <a
                     use:inertia
-                    href={me?.authenticated ? "/profile" : "/login"}
+                    href={accountHref}
                     onclick={closeMenu}
-                    class="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm font-medium text-slate-100"
-                    >♙ &nbsp;{me?.authenticated ? "Profile" : "Log in"}</a
+                    title={me?.authenticated ? me.user?.name : accountLabel}
+                    class="max-w-48 truncate rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm font-medium text-slate-100"
+                    >♙ &nbsp;{accountLabel}</a
                 >
                 <button
                     class="flex items-center gap-3 rounded-xl px-3 py-2"

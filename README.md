@@ -77,25 +77,52 @@ Tests: `php artisan test` (backend, 16 tests) · `cd ml-service && pip install -
 
 Your laptop's GPU (AMD Radeon 610M, integrated) cannot train deep models, so training runs on Colab; **the laptop only does inference on CPU**.
 
-1. Upload the `ml-service/` folder (zipped as `ml-service.zip`) to your Google Drive, **or** push the repo to GitHub.
-2. Open `ml-service/training/HulagwAI_Colab.ipynb` in Colab (`File ▸ Upload notebook`, or _Open from GitHub_).
-3. `Runtime ▸ Change runtime type ▸ T4 GPU`.
-4. Add Kaggle credentials: Kaggle ▸ _Settings ▸ API ▸ Create New Token_, then in Colab's 🔑 **Secrets** add `KAGGLE_USERNAME` and `KAGGLE_KEY` (enable _Notebook access_).
-5. Run the cells top to bottom. First do the **smoke test** cell (2–3 min) to prove the pipeline works.
-6. Run the real training cell (`--profile colab_fast`). Expect a few hours on a free T4 (estimate). Everything is saved to Drive and each stage skips itself if finished, so after a disconnect just re-run the cell.
-7. The last cell downloads `hulagwai-ensemble-<version>.zip`. **Unzip it into `ml-service/models/current/`** and run:
-    ```bash
-    cd ml-service && python -m app.verify
-    ```
-8. Restart `composer run dev`. The PDF report now shows real accuracy / precision / recall / F1 / ROC-AUC / MAE / MSE / Brier / log-loss / ECE / confusion matrix / robustness / unseen-generator results.
+1. Get the code into Colab. Prefer the public clone cell in `ml-service/training/HulagwAI_Colab.ipynb`:
+   ```bash
+   git clone https://github.com/J0SH-ua/HulagwAI-ni-Arena.git /content/repo
+   cd /content/repo/ml-service
+   ```
+   If the repository becomes private, create a GitHub token with read access and use `https://<TOKEN>@github.com/J0SH-ua/HulagwAI-ni-Arena.git`. Alternatively, zip `ml-service/` locally as `ml-service.zip`, upload it to Google Drive, and uncomment the upload option in the notebook.
+2. Upload `ml-service/training/HulagwAI_Colab.ipynb` to Colab (`File ▸ Upload notebook`) or open it from GitHub.
+3. In Colab, select `Runtime ▸ Change runtime type ▸ T4 GPU`.
+4. Add Kaggle credentials: Kaggle ▸ *Settings ▸ API ▸ Create New Token*. In Colab's 🔑 **Secrets**, add `KAGGLE_USERNAME` and `KAGGLE_KEY`, then enable **Notebook access** for both.
+5. Run the notebook cells from top to bottom. If `pip` installs the notebook dependencies, re-check that the runtime is using a T4 GPU before training.
+6. Run the smoke test before the real model:
+   ```bash
+   python -m training.run_all --profile smoke --work /content/smoke --version 0.0.1
+   ```
+   This takes about 2–3 minutes and only proves that the pipeline runs; smoke-test metrics are meaningless.
+7. Run the real training command. The estimate is 2–4 hours on a free T4, depending on Colab capacity:
+   ```bash
+   python -m training.run_all --profile colab_fast --work /content/drive/MyDrive/hulagwai_work --version 1.0.0 --with-ood
+   ```
+   Training artifacts and datasets are saved to Drive. Each stage skips completed output, so re-running the command after a disconnect continues the pipeline safely. Add `--genimage-root` or `--ood-real-dir` only when those optional dataset folders are available.
+8. In the notebook, inspect the metrics and download the last `hulagwai-ensemble-<version>.zip` file. On Windows, extract the **contents of the archive** into `ml-service/models/current/`; the folder must contain `config.json`, `manifest.json`, `metrics.json`, and the `.safetensors` files directly. For example:
+   ```powershell
+   cd C:\Personal_Projects\HulagwAI-main
+   Expand-Archive -LiteralPath "$env:USERPROFILE\Downloads\hulagwai-ensemble-1.0.0.zip" -DestinationPath .\ml-service\models\current -Force
+   cd ml-service
+   python -m app.verify
+   ```
+   If the ZIP creates an extra folder named `hulagwai-ensemble-1.0.0`, move that folder's contents up into `models/current/` before verification.
+9. Restart the full local application:
+   ```bash
+   composer run dev
+   ```
+   Open `http://127.0.0.1:8000`. The PDF report and analysis endpoint now use the verified real model instead of metadata-only inference.
 
-Prefer the command line? In any Colab cell:
+Prefer the command line directly in Colab? Use:
 
 ```bash
 !python -m training.run_all --profile colab_fast --work /content/drive/MyDrive/hulagwai_work --version 1.0.0 --with-ood
 ```
 
-Details, flags and troubleshooting: [`ml-service/training/README.md`](ml-service/training/README.md). Dataset links & licences: [`docs/DATASETS.md`](docs/DATASETS.md).
+The archive can also be verified from the repository root:
+```bash
+cd ml-service && python -m app.verify
+```
+
+Details, flags and troubleshooting: [`ml-service/training/README.md`](ml-service/training/README.md). Dataset links and licences: [`docs/DATASETS.md`](docs/DATASETS.md).
 
 ---
 

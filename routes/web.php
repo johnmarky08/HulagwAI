@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\ExtensionAuthController;
 use App\Http\Controllers\MetaController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ReportController;
@@ -15,9 +16,13 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', [PageController::class, 'home'])->name('home');
+Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
 Route::get('/detect', [PageController::class, 'detection'])->name('detection');
 Route::get('/history', [PageController::class, 'history'])->name('history');
+Route::get('/extension', [PageController::class, 'extension'])->name('extension');
 Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/profile', [PageController::class, 'profile'])->middleware('auth')->name('profile');
+Route::get('/extension/connect', [PageController::class, 'extensionConnect'])->middleware('auth')->name('extension.connect');
 
 Route::middleware('throttle:auth')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -37,9 +42,16 @@ Route::prefix('api/v1')->middleware('throttle:api')->group(function () {
     Route::get('/model', [MetaController::class, 'model']);
     Route::get('/health', [MetaController::class, 'health']);
 
+    Route::post('/extension/pair', [ExtensionAuthController::class, 'pair'])->middleware('auth');
+    Route::post('/extension/exchange', [ExtensionAuthController::class, 'exchange']);
+    Route::delete('/extension/token', [ExtensionAuthController::class, 'revoke'])->middleware('extension.token:required');
+    Route::post('/extension/analyses', [AnalysisController::class, 'store'])->middleware(['extension.token:required', 'throttle:analyze']);
+    Route::get('/extension/analyses/{id}', [AnalysisController::class, 'show'])->middleware('extension.token:required');
+
     Route::post('/analyses', [AnalysisController::class, 'store'])->middleware('throttle:analyze');
     Route::get('/analyses/{id}', [AnalysisController::class, 'show']);
-    Route::get('/analyses/{id}/image', [AnalysisController::class, 'image']);
+    // Optional extension token lets the popup show thumbnails of its own analyses.
+    Route::get('/analyses/{id}/image', [AnalysisController::class, 'image'])->middleware('extension.token:optional');
     Route::get('/analyses/{id}/report', [ReportController::class, 'show'])->middleware('throttle:report');
     Route::delete('/analyses/{id}', [AnalysisController::class, 'destroy']);
 
@@ -47,5 +59,7 @@ Route::prefix('api/v1')->middleware('throttle:api')->group(function () {
     Route::get('/history/export', [HistoryController::class, 'export'])->middleware('throttle:report');
     Route::delete('/history', [HistoryController::class, 'clear']);
 
+    Route::put('/account/profile', [AccountController::class, 'updateProfile'])->middleware('auth');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->middleware('auth');
     Route::post('/account/delete', [AccountController::class, 'destroy'])->middleware('auth');
 });

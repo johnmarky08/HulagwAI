@@ -1,6 +1,28 @@
 <script>
+    import { onMount } from "svelte";
     import { inertia } from "@inertiajs/svelte";
     import Layout from "./Components/Layout.svelte";
+    import LoginModal from "./Components/LoginModal.svelte";
+    import TechStackCarousel from "./Components/TechStackCarousel.svelte";
+    import { session, refreshSession } from "../api/session.svelte.js";
+    import { loginForm } from "../official/authPages.svelte.js";
+
+    let loginOpen = $state(false);
+
+    onMount(() => {
+        void refreshSession();
+    });
+
+    function openLogin() {
+        loginForm.error = "";
+        loginOpen = true;
+    }
+
+    function closeLogin() {
+        if (loginForm.busy) return;
+        loginOpen = false;
+        loginForm.error = "";
+    }
 </script>
 
 <svelte:head>
@@ -14,7 +36,7 @@
 <Layout active="home">
     <main class="mx-auto max-w-1440px">
         <section
-            class="scroll-reveal grid min-h-470px items-center gap-8 px-6 py-28 md:grid-cols-2 md:px-16 lg:min-h-485px"
+            class="scroll-reveal grid min-h-470px items-center gap-8 px-6 py-44 md:grid-cols-2 md:px-16 lg:min-h-485px"
         >
             <div>
                 <p
@@ -39,11 +61,21 @@
                     plain-language explanation.
                 </p>
                 <div class="mt-6 flex flex-wrap gap-4">
-                    <a
-                        use:inertia
-                        class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
-                        href="/detect"><span>↑</span> Analyze Image</a
-                    >
+                    {#if session.value?.authenticated}
+                        <a
+                            use:inertia
+                            class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
+                            href="/detect"><span>↑</span> Analyze Image</a
+                        >
+                    {:else if session.value === undefined}
+                        <span class="h-11 w-40 rounded-xl border border-slate-800 bg-slate-800/50" aria-hidden="true"></span>
+                    {:else}
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
+                            onclick={openLogin}><span>♙</span> Log in</button
+                        >
+                    {/if}
                     <a
                         class="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
                         href="#how-it-works">Learn How It Works</a
@@ -247,5 +279,25 @@
                 {/each}
             </div>
         </section>
+
+        <section
+            id="tech-stack"
+            class="scroll-reveal border-t border-indigo-500/30 px-6 py-12 md:px-16"
+            aria-labelledby="tech-stack-title"
+        >
+            <div class="mb-8 text-center">
+                <h2
+                    id="tech-stack-title"
+                    class="text-4xl font-extrabold tracking-tight text-indigo-400"
+                >
+                    Tech Stack
+                </h2>
+                <p class="mt-2 text-sm text-slate-400">
+                    The layers behind HulagwAI, revealed one at a time.
+                </p>
+            </div>
+            <TechStackCarousel />
+        </section>
     </main>
+    {#if loginOpen}<LoginModal onClose={closeLogin} />{/if}
 </Layout>
