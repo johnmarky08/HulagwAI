@@ -36,7 +36,7 @@ Raw generator names are mapped to families in `ml-service/app/attribution.py::fa
 
 ## Practical notes
 * **CIFAKE is 32×32.** A model trained *only* on it will not generalise to real photos or to Midjourney/DALL·E/FLUX output. That is why the pipeline mixes datasets and keeps Synthbuster for an honest unseen-generator test.
-* **ArtiFact is large (tens of GB).** On Colab pass `--artifact-root` if you already have it on Drive, or lower `artifact_per_class` in `training/common.py`.
+* **ArtiFact is large (tens of GB), but only what is used is downloaded:** stage 1 fetches its metadata.csv files and the sampled images one by one (kagglehub >= 1.0) into `<work>/artifact` on Drive, so they survive a new Colab runtime. `--artifact-root` still works for an already-extracted copy.
 * **GenImage** is hosted on Google Drive / Baidu (see its repo). Download the generators you want (a few is fine), keep the original layout `<generator>/{train,val}/{ai,nature}/…`, put them on Drive and pass `--genimage-root`.
 * Known dataset bias: in GenImage the real images are JPEG and the fakes PNG. The training pipeline applies the same random JPEG/blur/resize to both classes so the model cannot cheat on file format.
 * The ArtiFact / GenImage / Synthbuster adapters (`training/data_sources.py`) were written from the public documentation without downloading the data. They validate what they find and stop with a clear message if the layout differs — if that happens, adjust the few lines in the adapter.

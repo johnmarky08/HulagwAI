@@ -103,8 +103,10 @@ def main() -> None:
     for split, dp in (("train", 0.5), ("val", 0.0), ("test", 0.0)):
         sub = fk[fk.split == split].reset_index(drop=True)
         X = embed(ctx, sub["path"].tolist(), members, dp)
-        if X is None:
-            raise SystemExit(f"no readable images in the {split} split for attribution")
+        if X is None:                           # e.g. a dataset that only made it into train - skip, don't fail the run
+            log.warning("no readable AI images of families %s in the %s split - attribution skipped "
+                        "(detection is unaffected)", classes, split)
+            return
         ok = ~np.isnan(X).any(1)
         emb[split] = (X[ok], sub["family"].map(idx).to_numpy()[ok])
     (xtr, ytr), (xva, yva), (xte, yte) = emb["train"], emb["val"], emb["test"]

@@ -1,5 +1,8 @@
 """Run the whole pipeline:  python -m training.run_all --profile colab_fast --work /content/drive/MyDrive/hulagwai --with-ood
 
+Free Colab (~2.5 h GPU limit)?  --profile colab_mini, or shrink any profile with --subset 0.25 (fraction of the
+data) and/or --cnn-epochs 1. Use a separate --work folder per data size.
+
 Each stage skips itself if its output already exists, so you can simply re-run after a Colab disconnect.
 
 No GPU (e.g. Colab's free GPU quota is used up)? Only the stages that do not need one run - 01 (all downloads, the
