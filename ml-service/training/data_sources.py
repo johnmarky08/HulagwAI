@@ -196,6 +196,34 @@ def cap_total(df: pd.DataFrame, max_images: int, seed: int, attr_min: int = 0) -
     return out
 
 
+def hard_cap(df: pd.DataFrame, max_images: int, seed: int) -> pd.DataFrame:
+    """Strict version of cap_total: the result has AT MOST max_images rows (exactly max_images, rounded down to an even
+    number, when there is enough data) - no exceptions for CIFAKE or attribution floors. Every (source, split) keeps
+    real = AI and is shrunk by about the same fraction (largest-remainder allocation, at least 1 pair per group when
+    the budget allows), each side stratified by generator."""
+    if not max_images or len(df) <= max_images:
+        return df
+    groups = list(df.groupby(["source", "split"]))
+    pairs = pd.Series({k: min(int((g.label == 0).sum()), int((g.label == 1).sum())) for k, g in groups})
+    budget = max_images // 2                                   # pairs of (real, AI)
+    base = pairs.clip(upper=1) if budget >= int((pairs > 0).sum()) else pairs * 0
+    rest = budget - int(base.sum())
+    extra_cap = pairs - base
+    exact = extra_cap / max(1, int(extra_cap.sum())) * rest
+    alloc = base + exact.astype(int)
+    for k in (exact - exact.astype(int)).sort_values(ascending=False, kind="stable").index[: budget - int(alloc.sum())]:
+        alloc[k] += 1
+    alloc = alloc.clip(upper=pairs)
+    parts = []
+    for k, g in groups:
+        n = int(alloc[k])
+        if n:
+            parts += [_stratified_sample(g[g.label == 1], n, seed), _stratified_sample(g[g.label == 0], n, seed)]
+    out = pd.concat(parts, ignore_index=True) if parts else df.iloc[0:0]
+    log.info("strict dataset cap: %d -> %d images (limit %d, all datasets shrunk proportionally)", len(df), len(out), max_images)
+    return out
+
+
 def check_balance(df: pd.DataFrame, report_path) -> None:
     """Verify (and record for the report) that real and AI images are balanced: equal counts in every source/split."""
     import json
@@ -654,7 +682,7 @@ def _download_openfake(ctx: Ctx, root: Path, cap: int) -> None:
     # the surplus AI images and with them the family balance
     quota["real"] = cap * max(1, len(FAMILY_IDS) - 1)
     got = {k: 0 for k in quota}
-    max_bytes = float(getattr(ctx.args, "openfake_max_gb", 0) or 25) * 1e9
+    max_bytes = float(getattr(ctx.args, "openfake_max_gb", 0) or 5) * 1e9
     min_free = float(getattr(ctx.args, "min_free_gb", 0) or 4) * 1e9
     max_scan = int(getattr(ctx.args, "openfake_max_scan", 0) or 600_000)
     stall_limit = 30_000                                           # families absent from OpenFake (e.g. GANs) never fill

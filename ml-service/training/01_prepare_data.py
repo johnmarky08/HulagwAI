@@ -11,6 +11,7 @@ from training.common import SIZE_KEYS, log, parse, save_json
 def _size_settings(ctx) -> dict:
     d = {k: ctx.prof.get(k, 0) for k in SIZE_KEYS if k not in ("freq_max", "robustness_n")}
     d["max_images"] = ctx.prof.get("max_images", 0)
+    d["strict_cap"] = bool(ctx.prof.get("strict_cap", False))
     return d
 
 
@@ -27,6 +28,7 @@ def check_manifest_size(ctx) -> None:
     old, new = json.loads(f.read_text(encoding="utf-8")), _size_settings(ctx)
     old.pop("time_limited", None)                 # written by an earlier version
     old.setdefault("max_images", 0)
+    old.setdefault("strict_cap", False)           # settings files written before colab_tiny existed
     if old != new:
         diff = ", ".join(f"{k}: {old.get(k)} -> {new[k]}" for k in new if old.get(k) != new[k])
         raise SystemExit(f"manifest.csv in {ctx.work} was built with other data sizes ({diff}). Use a new --work folder "
@@ -94,6 +96,8 @@ def build_manifest(ctx) -> pd.DataFrame:
     df = D.dedup_and_check_leakage(pd.DataFrame(rows), ctx.reports / "leakage_check.json")
     df = D.balance(df, ctx.args.seed)                                  # real = AI in every source/split
     df = D.cap_total(df, ctx.prof.get("max_images", 0), ctx.args.seed, ctx.prof["attr_min"])
+    if ctx.prof.get("strict_cap"):                # e.g. colab_tiny: never more than max_images, CIFAKE included
+        df = D.hard_cap(df, ctx.prof["max_images"], ctx.args.seed)
     if df.empty or df["label"].nunique() < 2:
         raise SystemExit("manifest is empty or has only one class after balancing - check the datasets")
     for sp in ("train", "val", "test"):
@@ -198,6 +202,9 @@ def main() -> None:
                  if p.is_file() and p.name not in ("leakage_check.json", "balance_check.json")]
         for p in stale:
             p.unlink()
+        if ctx.cache.is_dir():                    # per-chunk caches of the old manifest (keyed anyway; frees Drive space)
+            import shutil
+            shutil.rmtree(ctx.cache, ignore_errors=True)
         if stale:
             log.info("new manifest: removed %d outputs of later stages from a previous run (they will be recomputed)", len(stale))
 

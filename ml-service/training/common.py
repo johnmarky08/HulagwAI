@@ -50,6 +50,13 @@ PROFILES: dict[str, dict] = {
                        freq_max=12_000, robustness_n=500, workers=2, pretrained=True, clip_epochs=300,
                        openfake_per_family=600, attr_epochs=300, attr_min=30,
                        openfake_max_minutes=15),   # OpenFake is slow: time-limited (stratified across families)
+    # Smallest real model, built for speed (~1 h total on a T4, most of it stage-1 downloads): EXACTLY 10 000 images
+    # across ALL datasets, CIFAKE included (strict_cap - never more; fewer only if less was downloaded), 2 CNN epochs,
+    # small evaluation passes. Downloads are sized so ~13-15k images exist before the cap trims them to 10 000.
+    "colab_tiny": dict(cifake_per_class=1_200, artifact_per_class=2_500, genimage_per_class=1_500, cnn_epochs=2, cnn_batch=64,
+                       freq_max=8_000, robustness_n=300, workers=2, pretrained=True, clip_epochs=200,
+                       openfake_per_family=350, attr_epochs=200, attr_min=20, max_images=10_000, strict_cap=True,
+                       openfake_max_minutes=8),
     "colab_full": dict(cifake_per_class=15_000, artifact_per_class=40_000, genimage_per_class=40_000, cnn_epochs=6, cnn_batch=64,
                        freq_max=120_000, robustness_n=4_000, workers=2, pretrained=True, clip_epochs=400,
                        openfake_per_family=8_000, attr_epochs=400, attr_min=60),
@@ -97,6 +104,8 @@ class Ctx:
     @property
     def reports(self) -> Path: return self.work / "reports"
     @property
+    def cache(self) -> Path: return self.work / "cache"     # resumable per-chunk results (see cached_rows)
+    @property
     def clip_cfg(self) -> dict:
         return {"arch": self.args.clip_arch, "pretrained": "openai" if self.prof["pretrained"] else None, "crop": P.CROP, "k_crops": 5}
     @property
@@ -122,7 +131,7 @@ def parse(description: str, extra=None) -> Ctx:
     ap.add_argument("--openfake-max-minutes", type=float, default=None,
                     help="time budget for the OpenFake download, filled evenly across generator families "
                          "(default: 15 for colab_mini, 120 otherwise; 0 = no limit)")
-    ap.add_argument("--openfake-max-gb", type=float, default=25, help="disk budget for the OpenFake images (they are stored in --work, i.e. on Drive)")
+    ap.add_argument("--openfake-max-gb", type=float, default=5, help="disk budget for the OpenFake images (they are stored in --work, i.e. on Drive; default 5 GB)")
     ap.add_argument("--min-free-gb", type=float, default=4, help="stop optional downloads when less than this is free on the --work disk")
     ap.add_argument("--ood-real-dir", help="folder of REAL camera photos for the unseen-generator test")
     ap.add_argument("--raise-csv", help="RAISE CSV (e.g. RAISE_2k.csv) - its TIFF URLs are downloaded as real photos for the unseen-generator test")
@@ -180,6 +189,81 @@ def done(path: Path, ctx: Ctx) -> bool:
         log.info("%s already exists - skipping (use --force to redo)", path.name)
         return True
     return False
+
+
+def paths_hash(paths) -> str:
+    """Short fingerprint of an ordered list of image paths (a cache is only reused for exactly the same images)."""
+    import hashlib
+    return hashlib.sha1("\n".join(map(str, paths)).encode("utf-8")).hexdigest()
+
+
+def artifacts_fingerprint(ctx: Ctx) -> dict:
+    """Size + mtime of the trained member weights: caches of model outputs are invalidated when a model is retrained."""
+    out = {"clip": ctx.clip_cfg, "cnn": ctx.cnn_cfg}
+    for fn in ("clip_head.safetensors", "cnn.safetensors", "freq_mlp.safetensors"):
+        p = ctx.artifacts / fn
+        if p.is_file():
+            st = p.stat()
+            out[fn] = [st.st_size, st.st_mtime_ns]
+    return out
+
+
+def atomic_replace(tmp: Path, dest: Path) -> None:
+    os.replace(tmp, dest)      # same folder -> atomic; a disconnect never leaves a half-written file under `dest`
+
+
+def cached_rows(ctx: Ctx, name: str, key: dict, n: int, fn, chunk: int = 1000) -> np.ndarray:
+    """Compute fn(start, end) -> ndarray of shape [end-start, ...] for rows 0..n in chunks, saving each chunk to
+    <work>/cache/<name>/ (Drive on Colab) as soon as it is done. After a disconnect, finished chunks are loaded and
+    only the rest is computed. `key` describes the inputs (paths, models, seeds...); a different key, or --force,
+    discards the old cache. All chunks must have the same trailing shape."""
+    import hashlib
+    import shutil
+
+    d = ctx.cache / name
+    kh = hashlib.sha1(json.dumps({**key, "n": n, "chunk": chunk}, sort_keys=True, default=str).encode()).hexdigest()
+    meta = d / "key.json"
+    if d.is_dir():
+        try:
+            same = json.loads(meta.read_text(encoding="utf-8")).get("key") == kh
+        except Exception:  # noqa: BLE001 - missing/corrupt key file
+            same = False
+        if not same or ctx.args.force:
+            log.info("cache %s: inputs changed%s - recomputing", name, " (--force)" if same else "")
+            shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True, exist_ok=True)
+    save_json(meta, {"key": kh, "n": n, "chunk": chunk})
+    parts, starts = [], list(range(0, n, chunk))
+    reused = 0
+    for c, s in enumerate(starts):
+        e = min(n, s + chunk)
+        f = d / f"{c:05d}.npy"
+        if f.is_file():
+            try:
+                a = np.load(f)
+                if len(a) == e - s:
+                    parts.append(a)
+                    reused += 1
+                    continue
+            except Exception:  # noqa: BLE001 - truncated file from a crash: recompute it
+                pass
+        a = np.asarray(fn(s, e))
+        tmp = d / f"{c:05d}.tmp.npy"
+        np.save(tmp, a)
+        atomic_replace(tmp, f)
+        parts.append(a)
+        log.info("cache %s: chunk %d/%d saved (rows %d-%d)", name, c + 1, len(starts), s, e)
+    if reused:
+        log.info("cache %s: reused %d/%d chunks from a previous run", name, reused, len(starts))
+    return np.concatenate(parts) if parts else np.empty((0,))
+
+
+def drop_cache(ctx: Ctx, *names: str) -> None:
+    """Delete per-chunk caches once the stage's final output is saved - they only exist to resume an unfinished stage,
+    so Drive never keeps more than the stage in progress needs."""
+    import shutil
+    for n in names:
+        shutil.rmtree(ctx.cache / n, ignore_errors=True)
 
 
 def run_info(ctx: Ctx) -> dict:

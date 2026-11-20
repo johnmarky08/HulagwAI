@@ -18,7 +18,7 @@ from PIL import Image, ImageFilter
 from app.forensics import frequency
 from training import members_eval as ME
 from training import metrics as M
-from training.common import done, load_manifest, log, open_rgb, parse, save_json
+from training.common import cached_rows, done, drop_cache, load_manifest, log, open_rgb, parse, paths_hash, save_json
 
 
 def fuse_all(z: np.ndarray, cfg: dict) -> np.ndarray:
@@ -56,10 +56,21 @@ def classic_baselines(ctx, te_paths, y_te, keep_mask):
     from sklearn.preprocessing import StandardScaler
 
     f = np.load(ctx.features / "freq_feats.npz")
-    with Pool(max(1, os.cpu_count() or 1)) as pool:
-        feats = pool.map(_feat, te_paths, chunksize=64)
-    ok = np.array([x is not None for x in feats])
-    xte = np.stack([x for x in feats if x is not None])
+
+    def chunk(s, e):                          # last column: 1 = readable image, 0 = unreadable (row ignored)
+        with Pool(max(1, os.cpu_count() or 1)) as pool:
+            res = pool.map(_feat, te_paths[s:e], chunksize=16)
+        a = np.full((e - s, frequency.N_FEATURES + 1), np.nan)
+        for i, x in enumerate(res):
+            a[i, -1] = x is not None
+            if x is not None:
+                a[i, :-1] = x
+        return a
+
+    a = cached_rows(ctx, "test_freq_feats", {"paths": paths_hash(te_paths), "n_features": frequency.N_FEATURES},
+                    len(te_paths), chunk, chunk=2000)
+    ok = a[:, -1] == 1
+    xte = a[ok, :-1]
     models = {
         "Logistic Regression on hand-crafted features (scikit-learn)": make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000)),
         "Random Forest on hand-crafted features (scikit-learn)": RandomForestClassifier(n_estimators=200, max_depth=14, n_jobs=-1, random_state=ctx.args.seed),
@@ -92,7 +103,7 @@ def main() -> None:
     tr_prior = float((df[df.split == "train"].label == 1).mean())
     members = ME.build_members(ctx)
 
-    z = ME.compute_logits(ctx, te["path"].tolist(), members)
+    z = ME.compute_logits(ctx, te["path"].tolist(), members, cache="test")
     ok = ~np.isnan(z).any(1)
     te, z = te[ok].reset_index(drop=True), z[ok]
     y, p = te["label"].to_numpy(), fuse_all(z, fcfg["fusion"])
@@ -155,7 +166,7 @@ def main() -> None:
     sub = te.sample(n=n, random_state=ctx.args.seed).index.to_numpy()
     rob = {"none": {"accuracy": float(((p[sub] >= .5) == y[sub]).mean()), "n": int(n)}}
     for name, tf in TRANSFORMS.items():
-        zz = ME.compute_logits(ctx, te.loc[sub, "path"].tolist(), members, transform=tf)
+        zz = ME.compute_logits(ctx, te.loc[sub, "path"].tolist(), members, transform=tf, cache=f"robust_{name}")
         good = ~np.isnan(zz).any(1)
         rob[name] = {"accuracy": float(((fuse_all(zz[good], fcfg["fusion"]) >= .5) == y[sub][good]).mean()), "n": int(good.sum())}
     rep["robustness"] = rob
@@ -164,7 +175,7 @@ def main() -> None:
     ood_path = ctx.work / "ood_manifest.csv"
     if ood_path.is_file():
         od = pd.read_csv(ood_path)
-        zo = ME.compute_logits(ctx, od["path"].tolist(), members)
+        zo = ME.compute_logits(ctx, od["path"].tolist(), members, cache="ood")
         g = ~np.isnan(zo).any(1)
         od, po = od[g].reset_index(drop=True), fuse_all(zo[g], fcfg["fusion"])
         fk, rl = (od.label == 1).to_numpy(), (od.label == 0).to_numpy()
@@ -180,6 +191,7 @@ def main() -> None:
     rep["leakage_check"] = json.loads(leak.read_text()) if leak.is_file() else None
     rep["thresholds"], rep["fusion"] = th, fcfg["fusion"]
     save_json(out, M.clean(rep))
+    drop_cache(ctx, "logits_test", "logits_ood", "test_freq_feats", *(f"logits_robust_{n}" for n in TRANSFORMS))
     t = rep["test"]
     log.info("TEST n=%d acc=%.4f prec=%.4f recall=%.4f f1=%.4f auc=%.4f MAE=%.4f", t["n"], t["accuracy"], t["precision"], t["recall"], t["f1"], t["roc_auc"], t["mae"])
     for r in cmp_rows:
