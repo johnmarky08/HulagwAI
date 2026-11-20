@@ -26,26 +26,49 @@
 </script>
 
 <div class="login-gate relative">
-    <div class="login-gate-content" class:locked={locked} inert={!signedIn}>
+    <div class="login-gate-content" class:locked inert={!signedIn}>
         {@render children?.()}
     </div>
     <!-- Moved to <body>: page wrappers with transform/filter would otherwise turn "fixed" into "absolute". -->
     <div class="login-gate-layer" use:portal>
-    {#if locked}
-        <div class="login-gate-overlay">
-            <div class="login-gate-card" role="region" aria-labelledby="login-gate-title">
-                <span class="login-gate-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
-                </span>
-                <h2 id="login-gate-title">Log in to use</h2>
-                <p>Don't worry, you can still use the other features.</p>
-                <button type="button" class="login-gate-primary" onclick={() => (loginOpen = true)}>Log in</button>
+        {#if locked}
+            <div class="login-gate-overlay">
+                <div
+                    class="login-gate-card"
+                    role="region"
+                    aria-labelledby="login-gate-title"
+                >
+                    <span class="login-gate-icon" aria-hidden="true">
+                        <svg
+                            viewBox="0 0 24 24"
+                            class="size-6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><rect
+                                x="4"
+                                y="11"
+                                width="16"
+                                height="10"
+                                rx="2"
+                            /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg
+                        >
+                    </span>
+                    <h2 id="login-gate-title">Log in to use</h2>
+                    <p>Don't worry, you can still use the other features.</p>
+                    <button
+                        type="button"
+                        class="login-gate-primary"
+                        onclick={() => (loginOpen = true)}>Log in</button
+                    >
+                </div>
             </div>
-        </div>
-    {/if}
-    {#if loginOpen}
-        <LoginModal onClose={() => (loginOpen = false)} />
-    {/if}
+        {/if}
+        {#if loginOpen}
+            <LoginModal onClose={() => (loginOpen = false)} />
+        {/if}
     </div>
 </div>
 

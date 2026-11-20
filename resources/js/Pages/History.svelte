@@ -20,7 +20,9 @@
 
 <Layout active="history">
     <main class="mx-auto min-h-[calc(100vh-80px)] max-w-1240px px-5 pb-16">
-        <div class="mx-auto mb-8 mt-7 max-w-3xl text-left sm:mt-10 sm:text-center">
+        <div
+            class="mx-auto mb-8 mt-7 max-w-3xl text-left sm:mt-10 sm:text-center"
+        >
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent sm:text-5xl"
             >
@@ -31,118 +33,221 @@
             </p>
         </div>
         <LoginGate>
-        <section class="mb-7 grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Analysis summary">
-            {#each [
-                { label: "Total analyses", value: ui.stats.total, tone: "indigo", icon: "▧", caption: "Processed analyses" },
-                { label: "Likely real", value: ui.stats.likely_real, tone: "emerald", icon: "◉", caption: "Likely authentic" },
-                { label: "AI-generated", value: ui.stats.ai_generated, tone: "rose", icon: "✳", caption: "Likely synthetic" },
-                { label: "Inconclusive", value: ui.stats.inconclusive, tone: "amber", icon: "⚠", caption: "Needs human review" },
-            ] as card (card.label)}
-                <article class="history-stat group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition duration-300 hover:-translate-y-1 hover:border-slate-700 hover:shadow-xl hover:shadow-indigo-950/30 sm:p-5" data-tone={card.tone}>
-                    <span class="absolute inset-x-0 top-0 h-1 bar" aria-hidden="true"></span>
-                    <div class="flex items-center justify-between gap-3">
-                        <span class="text-[10px] font-semibold uppercase tracking-[.06em] text-slate-400 sm:text-xs sm:tracking-[.12em]">{card.label}</span>
-                        <span class="grid size-8 shrink-0 place-items-center rounded-xl border text-sm chip sm:size-9 sm:text-base" aria-hidden="true">{card.icon}</span>
-                    </div>
-                    <strong class="mt-3 block text-3xl font-extrabold tabular-nums sm:text-4xl value">{card.value}</strong>
-                    <span class="mt-1 block text-xs text-slate-400">{card.caption}</span>
-                </article>
-            {/each}
-        </section>
-        <div
-            class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]"
-        >
-            <label
-                class="col-span-2 flex h-12 items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 md:col-span-1"
-                ><span class="text-xl text-slate-400">⌕</span><input
-                    class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
-                    placeholder="Search by filename"
-                    value={ui.search}
-                    oninput={handleHistorySearch}
-                /></label
+            <section
+                class="mb-7 grid grid-cols-2 gap-4 lg:grid-cols-4"
+                aria-label="Analysis summary"
             >
-            <select
-                class="h-12 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm text-white"
-                aria-label="Filter by result"
-                value={ui.verdictFilter}
-                onchange={handleResultFilter}
-                ><option>All results</option><option>Real</option><option
-                    >AI-generated</option
-                ><option>Inconclusive</option></select
+                {#each [{ label: "Total analyses", value: ui.stats.total, tone: "indigo", icon: "▧", caption: "Processed analyses" }, { label: "Likely real", value: ui.stats.likely_real, tone: "emerald", icon: "◉", caption: "Likely authentic" }, { label: "AI-generated", value: ui.stats.ai_generated, tone: "rose", icon: "✳", caption: "Likely synthetic" }, { label: "Inconclusive", value: ui.stats.inconclusive, tone: "amber", icon: "⚠", caption: "Needs human review" }] as card (card.label)}
+                    <article
+                        class="history-stat group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition duration-300 hover:-translate-y-1 hover:border-slate-700 hover:shadow-xl hover:shadow-indigo-950/30 sm:p-5"
+                        data-tone={card.tone}
+                    >
+                        <span
+                            class="absolute inset-x-0 top-0 h-1 bar"
+                            aria-hidden="true"
+                        ></span>
+                        <div class="flex items-center justify-between gap-3">
+                            <span
+                                class="text-[10px] font-semibold uppercase tracking-[.06em] text-slate-400 sm:text-xs sm:tracking-[.12em]"
+                                >{card.label}</span
+                            >
+                            <span
+                                class="grid size-8 shrink-0 place-items-center rounded-xl border text-sm chip sm:size-9 sm:text-base"
+                                aria-hidden="true">{card.icon}</span
+                            >
+                        </div>
+                        <strong
+                            class="mt-3 block text-3xl font-extrabold tabular-nums sm:text-4xl value"
+                            >{card.value}</strong
+                        >
+                        <span class="mt-1 block text-xs text-slate-400"
+                            >{card.caption}</span
+                        >
+                    </article>
+                {/each}
+            </section>
+            <div
+                class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]"
             >
-            <select
-                class="h-12 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-300"
-                aria-label="Filter by date"
-                value={ui.dateFilter}
-                onchange={handleRangeFilter}
-                ><option>All time</option><option>Last 7 days</option><option
-                    >Last 30 days</option
-                ><option>Last 90 days</option></select
-            >
-            <button
-                class="col-span-2 h-12 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-5 text-sm font-semibold md:col-span-1"
-                onclick={exportHistory}>↓ &nbsp; Export history</button
-            >
-        </div>
-        {#if ui.historyError}<p
-                class="mb-4 rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-300"
-            >
-                {ui.historyError}
-            </p>{/if}
-        <section
-            class="rounded-xl border border-indigo-500/50 bg-slate-900/80 p-3 sm:p-5"
-        >
-            <div class="flex items-center justify-between px-2">
-                <h2 class="text-lg font-bold">Recent analyses</h2>
-                <span class="text-xs text-slate-400">Newest first</span>
-            </div>
-            <div class="mt-4 hidden overflow-x-auto md:block">
-                <table
-                    class="w-full min-w-740px border-collapse text-left text-sm"
+                <label
+                    class="col-span-2 flex h-12 items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 md:col-span-1"
+                    ><span class="text-xl text-slate-400">⌕</span><input
+                        class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                        placeholder="Search by filename"
+                        value={ui.search}
+                        oninput={handleHistorySearch}
+                    /></label
                 >
-                    <thead class="text-xs text-slate-400"
-                        ><tr
-                            ><th class="p-3 font-medium">Image / Filename</th
-                            ><th class="p-3 font-medium">Result</th><th
-                                class="p-3 font-medium">Confidence</th
-                            ><th class="p-3 font-medium">Date analyzed</th><th
-                                class="p-3"
-                            ></th></tr
-                        ></thead
-                    ><tbody>
-                        {#if ui.loadingHistory}<tr
-                                ><td
-                                    colspan="5"
-                                    class="p-10 text-center text-slate-400"
-                                    >Loading history…</td
-                                ></tr
-                            >{:else if ui.rows.length === 0}<tr
-                                ><td
-                                    colspan="5"
-                                    class="p-10 text-center text-slate-400"
-                                    >No analyses found.</td
-                                ></tr
-                            >{:else}{#each ui.rows as row, index (row.id)}<tr
-                                    class="border-t border-slate-800"
-                                    class:bg-indigo-950={index === 0}
-                                    ><td class="p-2"
-                                        ><div class="flex items-center gap-4">
-                                            <a
+                <select
+                    class="h-12 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm text-white"
+                    aria-label="Filter by result"
+                    value={ui.verdictFilter}
+                    onchange={handleResultFilter}
+                    ><option>All results</option><option>Real</option><option
+                        >AI-generated</option
+                    ><option>Inconclusive</option></select
+                >
+                <select
+                    class="h-12 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-300"
+                    aria-label="Filter by date"
+                    value={ui.dateFilter}
+                    onchange={handleRangeFilter}
+                    ><option>All time</option><option>Last 7 days</option
+                    ><option>Last 30 days</option><option>Last 90 days</option
+                    ></select
+                >
+                <button
+                    class="col-span-2 h-12 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-5 text-sm font-semibold md:col-span-1"
+                    onclick={exportHistory}>↓ &nbsp; Export history</button
+                >
+            </div>
+            {#if ui.historyError}<p
+                    class="mb-4 rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-300"
+                >
+                    {ui.historyError}
+                </p>{/if}
+            <section
+                class="rounded-xl border border-indigo-500/50 bg-slate-900/80 p-3 sm:p-5"
+            >
+                <div class="flex items-center justify-between px-2">
+                    <h2 class="text-lg font-bold">Recent analyses</h2>
+                    <span class="text-xs text-slate-400">Newest first</span>
+                </div>
+                <div class="mt-4 hidden overflow-x-auto md:block">
+                    <table
+                        class="w-full min-w-740px border-collapse text-left text-sm"
+                    >
+                        <thead class="text-xs text-slate-400"
+                            ><tr
+                                ><th class="p-3 font-medium"
+                                    >Image / Filename</th
+                                ><th class="p-3 font-medium">Result</th><th
+                                    class="p-3 font-medium">Confidence</th
+                                ><th class="p-3 font-medium">Date analyzed</th
+                                ><th class="p-3"></th></tr
+                            ></thead
+                        ><tbody>
+                            {#if ui.loadingHistory}<tr
+                                    ><td
+                                        colspan="5"
+                                        class="p-10 text-center text-slate-400"
+                                        >Loading history…</td
+                                    ></tr
+                                >{:else if ui.rows.length === 0}<tr
+                                    ><td
+                                        colspan="5"
+                                        class="p-10 text-center text-slate-400"
+                                        >No analyses found.</td
+                                    ></tr
+                                >{:else}{#each ui.rows as row, index (row.id)}<tr
+                                        class="border-t border-slate-800"
+                                        class:bg-indigo-950={index === 0}
+                                        ><td class="p-2"
+                                            ><div
+                                                class="flex items-center gap-4"
+                                            >
+                                                <a
+                                                    use:inertia
+                                                    class="thumb-link shrink-0"
+                                                    href={"/detect?analysis=" +
+                                                        row.id}
+                                                    aria-label={`Open the analysis of ${row.filename}`}
+                                                    ><img
+                                                        class="size-12 rounded-lg object-cover"
+                                                        src={row.thumb_url ||
+                                                            sampleImage}
+                                                        alt=""
+                                                    /></a
+                                                ><span>{row.filename}</span>
+                                            </div></td
+                                        ><td class="p-3"
+                                            ><span
+                                                class="rounded-full px-3 py-1 text-[10px] font-bold uppercase"
+                                                class:bg-rose-950={row.verdict ===
+                                                    "ai_generated"}
+                                                class:text-rose-400={row.verdict ===
+                                                    "ai_generated"}
+                                                class:bg-emerald-950={row.verdict ===
+                                                    "real"}
+                                                class:text-emerald-400={row.verdict ===
+                                                    "real"}
+                                                class:bg-amber-950={row.verdict ===
+                                                    "inconclusive"}
+                                                class:text-amber-400={row.verdict ===
+                                                    "inconclusive"}
+                                                >{row.label}</span
+                                            ></td
+                                        ><td class="p-3"
+                                            >{row.confidence_percent}%</td
+                                        ><td class="p-3 text-slate-400"
+                                            >{formatDate(row.analyzed_at)}</td
+                                        ><td class="p-3"
+                                            ><a
                                                 use:inertia
-                                                class="thumb-link shrink-0"
-                                                href={"/detect?analysis=" + row.id}
-                                                aria-label={`Open the analysis of ${row.filename}`}
-                                                ><img
-                                                    class="size-12 rounded-lg object-cover"
-                                                    src={row.thumb_url ||
-                                                        sampleImage}
-                                                    alt=""
-                                                /></a
-                                            ><span>{row.filename}</span>
-                                        </div></td
-                                    ><td class="p-3"
-                                        ><span
-                                            class="rounded-full px-3 py-1 text-[10px] font-bold uppercase"
+                                                class="text-xs font-semibold hover:text-indigo-300"
+                                                href={"/detect?analysis=" +
+                                                    row.id}>View ›</a
+                                            ></td
+                                        ></tr
+                                    >{/each}{/if}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 grid gap-3 md:hidden">
+                    {#if ui.loadingHistory}
+                        <p
+                            class="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-center text-sm text-slate-400"
+                        >
+                            Loading history…
+                        </p>
+                    {:else if ui.rows.length === 0}
+                        <p
+                            class="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-center text-sm text-slate-400"
+                        >
+                            No analyses found.
+                        </p>
+                    {:else}
+                        {#each ui.rows as row (row.id)}
+                            <article
+                                class="mobile-history-card flex min-w-0 gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3"
+                            >
+                                <a
+                                    use:inertia
+                                    class="thumb-link shrink-0"
+                                    href={"/detect?analysis=" + row.id}
+                                    aria-label={`Open the analysis of ${row.filename}`}
+                                    ><img
+                                        class="size-14 rounded-lg object-cover"
+                                        src={row.thumb_url || sampleImage}
+                                        alt=""
+                                    /></a
+                                >
+                                <div class="min-w-0 flex-1">
+                                    <div
+                                        class="flex min-w-0 items-start justify-between gap-2"
+                                    >
+                                        <div class="min-w-0">
+                                            <p
+                                                class="truncate text-sm font-semibold"
+                                            >
+                                                {row.filename}
+                                            </p>
+                                            <p
+                                                class="mt-1 text-xs text-slate-400"
+                                            >
+                                                {formatDate(row.analyzed_at)}
+                                            </p>
+                                        </div>
+                                        <span
+                                            class="shrink-0 text-xs text-slate-400"
+                                            >{row.confidence_percent}%</span
+                                        >
+                                    </div>
+                                    <div
+                                        class="mt-3 flex items-center justify-between gap-2"
+                                    >
+                                        <span
+                                            class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase"
                                             class:bg-rose-950={row.verdict ===
                                                 "ai_generated"}
                                             class:text-rose-400={row.verdict ===
@@ -156,87 +261,77 @@
                                             class:text-amber-400={row.verdict ===
                                                 "inconclusive"}
                                             >{row.label}</span
-                                        ></td
-                                    ><td class="p-3"
-                                        >{row.confidence_percent}%</td
-                                    ><td class="p-3 text-slate-400"
-                                        >{formatDate(row.analyzed_at)}</td
-                                    ><td class="p-3"
-                                        ><a
+                                        >
+                                        <a
                                             use:inertia
-                                            class="text-xs font-semibold hover:text-indigo-300"
+                                            class="text-xs font-semibold text-indigo-300"
                                             href={"/detect?analysis=" + row.id}
-                                            >View ›</a
-                                        ></td
-                                    ></tr
-                                >{/each}{/if}
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-4 grid gap-3 md:hidden">
-                {#if ui.loadingHistory}
-                    <p class="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-center text-sm text-slate-400">Loading history…</p>
-                {:else if ui.rows.length === 0}
-                    <p class="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-center text-sm text-slate-400">No analyses found.</p>
-                {:else}
-                    {#each ui.rows as row (row.id)}
-                        <article class="mobile-history-card flex min-w-0 gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                            <a use:inertia class="thumb-link shrink-0" href={"/detect?analysis=" + row.id} aria-label={`Open the analysis of ${row.filename}`}><img class="size-14 rounded-lg object-cover" src={row.thumb_url || sampleImage} alt="" /></a>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex min-w-0 items-start justify-between gap-2">
-                                    <div class="min-w-0">
-                                        <p class="truncate text-sm font-semibold">{row.filename}</p>
-                                        <p class="mt-1 text-xs text-slate-400">{formatDate(row.analyzed_at)}</p>
+                                            >View result ›</a
+                                        >
                                     </div>
-                                    <span class="shrink-0 text-xs text-slate-400">{row.confidence_percent}%</span>
                                 </div>
-                                <div class="mt-3 flex items-center justify-between gap-2">
-                                    <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase" class:bg-rose-950={row.verdict === "ai_generated"} class:text-rose-400={row.verdict === "ai_generated"} class:bg-emerald-950={row.verdict === "real"} class:text-emerald-400={row.verdict === "real"} class:bg-amber-950={row.verdict === "inconclusive"} class:text-amber-400={row.verdict === "inconclusive"}>{row.label}</span>
-                                    <a use:inertia class="text-xs font-semibold text-indigo-300" href={"/detect?analysis=" + row.id}>View result ›</a>
-                                </div>
-                            </div>
-                        </article>
-                    {/each}
-                {/if}
-            </div>
-            <div
-                class="flex flex-col gap-3 px-2 pb-2 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <span
-                    >Showing {ui.meta.from ?? 0}–{ui.meta.to ?? 0} of {ui.meta
-                        .total} analyses</span
-                >
-                <div class="flex items-center gap-2">
-                    <button
-                        class="text-white disabled:opacity-40"
-                        disabled={ui.meta.page <= 1}
-                        onclick={previousHistoryPage}>Previous</button
-                    >{#each Array.from({ length: Math.max(1, ui.meta.last_page) }, (_, index) => index + 1) as page}<button
-                            class="px-1 text-white"
-                            class:text-indigo-400={ui.meta.page === page}
-                            data-page={page}
-                            onclick={handleHistoryPage}>{page}</button
-                        >{/each}<button
-                        class="text-white disabled:opacity-40"
-                        disabled={ui.meta.page >= ui.meta.last_page}
-                        onclick={nextHistoryPage}>Next ›</button
-                    >
+                            </article>
+                        {/each}
+                    {/if}
                 </div>
-            </div>
-        </section>
+                <div
+                    class="flex flex-col gap-3 px-2 pb-2 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <span
+                        >Showing {ui.meta.from ?? 0}–{ui.meta.to ?? 0} of {ui
+                            .meta.total} analyses</span
+                    >
+                    <div class="flex items-center gap-2">
+                        <button
+                            class="text-white disabled:opacity-40"
+                            disabled={ui.meta.page <= 1}
+                            onclick={previousHistoryPage}>Previous</button
+                        >{#each Array.from({ length: Math.max(1, ui.meta.last_page) }, (_, index) => index + 1) as page}<button
+                                class="px-1 text-white"
+                                class:text-indigo-400={ui.meta.page === page}
+                                data-page={page}
+                                onclick={handleHistoryPage}>{page}</button
+                            >{/each}<button
+                            class="text-white disabled:opacity-40"
+                            disabled={ui.meta.page >= ui.meta.last_page}
+                            onclick={nextHistoryPage}>Next ›</button
+                        >
+                    </div>
+                </div>
+            </section>
         </LoginGate>
     </main>
 </Layout>
 
 <style>
     /* Dashboard colour coding for the summary cards. */
-    .history-stat[data-tone="indigo"] { --c: #818cf8; --bar: #6366f1; }
-    .history-stat[data-tone="emerald"] { --c: #34d399; --bar: #10b981; }
-    .history-stat[data-tone="rose"] { --c: #fb7185; --bar: #f43f5e; }
-    .history-stat[data-tone="amber"] { --c: #fbbf24; --bar: #f59e0b; }
-    .history-stat .bar { background: var(--bar); }
-    .history-stat .chip { border-color: color-mix(in srgb, var(--c) 35%, transparent); background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c); }
-    .history-stat .value { color: var(--c); }
+    .history-stat[data-tone="indigo"] {
+        --c: #818cf8;
+        --bar: #6366f1;
+    }
+    .history-stat[data-tone="emerald"] {
+        --c: #34d399;
+        --bar: #10b981;
+    }
+    .history-stat[data-tone="rose"] {
+        --c: #fb7185;
+        --bar: #f43f5e;
+    }
+    .history-stat[data-tone="amber"] {
+        --c: #fbbf24;
+        --bar: #f59e0b;
+    }
+    .history-stat .bar {
+        background: var(--bar);
+    }
+    .history-stat .chip {
+        border-color: color-mix(in srgb, var(--c) 35%, transparent);
+        background: color-mix(in srgb, var(--c) 12%, transparent);
+        color: var(--c);
+    }
+    .history-stat .value {
+        color: var(--c);
+    }
 
     .thumb-link {
         border-radius: 0.5rem;

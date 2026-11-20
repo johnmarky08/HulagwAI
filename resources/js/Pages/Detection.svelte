@@ -180,9 +180,11 @@
                 <article
                     class="rounded-2xl border border-indigo-500/50 bg-slate-900 p-4"
                 >
-                    <div class="scan-image-frame relative isolate mx-auto w-full overflow-hidden rounded-xl sm:w-fit"
+                    <div
+                        class="scan-image-frame relative isolate mx-auto w-full overflow-hidden rounded-xl sm:w-fit"
                         class:scan-frame-dark={!ui.light}
-                        class:scan-frame-light={ui.light}>
+                        class:scan-frame-light={ui.light}
+                    >
                         <img
                             class="scan-image block h-auto w-full rounded-xl object-contain sm:w-auto sm:max-w-full"
                             class:scan-image-dark={!ui.light}
@@ -190,8 +192,18 @@
                             src={ui.preview || ui.resultPreview}
                             alt="Authenticity scan in progress"
                         />
-                        <div class="scan-image-tint pointer-events-none absolute inset-0" class:scan-tint-dark={!ui.light} class:scan-tint-light={ui.light} aria-hidden="true"></div>
-                        <span class="scan-beam pointer-events-none absolute inset-x-0 top-0" class:scan-beam-dark={!ui.light} class:scan-beam-light={ui.light} aria-hidden="true"></span>
+                        <div
+                            class="scan-image-tint pointer-events-none absolute inset-0"
+                            class:scan-tint-dark={!ui.light}
+                            class:scan-tint-light={ui.light}
+                            aria-hidden="true"
+                        ></div>
+                        <span
+                            class="scan-beam pointer-events-none absolute inset-x-0 top-0"
+                            class:scan-beam-dark={!ui.light}
+                            class:scan-beam-light={ui.light}
+                            aria-hidden="true"
+                        ></span>
                     </div>
                     <div class="mt-5 flex justify-between text-sm">
                         <span>{ui.file?.name}</span><span class="text-slate-400"
@@ -383,23 +395,38 @@
     }
 
     .scan-image-light {
-        filter: saturate(1.42) sepia(0.16) hue-rotate(322deg) brightness(1.06) contrast(1.06);
+        filter: saturate(1.42) sepia(0.16) hue-rotate(322deg) brightness(1.06)
+            contrast(1.06);
     }
 
     .scan-frame-dark {
-        box-shadow: inset 0 0 0 2px rgb(129 140 248 / 55%), 0 0 30px rgb(99 102 241 / 30%);
+        box-shadow:
+            inset 0 0 0 2px rgb(129 140 248 / 55%),
+            0 0 30px rgb(99 102 241 / 30%);
     }
 
     .scan-frame-light {
-        box-shadow: inset 0 0 0 2px rgb(217 119 6 / 55%), 0 0 30px rgb(244 114 182 / 24%);
+        box-shadow:
+            inset 0 0 0 2px rgb(217 119 6 / 55%),
+            0 0 30px rgb(244 114 182 / 24%);
     }
 
     .scan-tint-dark {
-        background: linear-gradient(180deg, rgb(79 70 229 / 24%), rgb(34 211 238 / 12%) 52%, rgb(79 70 229 / 22%));
+        background: linear-gradient(
+            180deg,
+            rgb(79 70 229 / 24%),
+            rgb(34 211 238 / 12%) 52%,
+            rgb(79 70 229 / 22%)
+        );
     }
 
     .scan-tint-light {
-        background: linear-gradient(180deg, rgb(251 191 36 / 22%), rgb(244 114 182 / 12%) 52%, rgb(251 191 36 / 22%));
+        background: linear-gradient(
+            180deg,
+            rgb(251 191 36 / 22%),
+            rgb(244 114 182 / 12%) 52%,
+            rgb(251 191 36 / 22%)
+        );
     }
 
     .scan-beam {
@@ -409,18 +436,40 @@
     }
 
     .scan-beam-dark {
-        background: linear-gradient(90deg, transparent 0%, #a5b4fc 12%, #67e8f9 50%, #a5b4fc 88%, transparent 100%);
-        box-shadow: 0 0 12px 4px rgb(103 232 249 / 85%), 0 0 38px 12px rgb(99 102 241 / 55%);
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            #a5b4fc 12%,
+            #67e8f9 50%,
+            #a5b4fc 88%,
+            transparent 100%
+        );
+        box-shadow:
+            0 0 12px 4px rgb(103 232 249 / 85%),
+            0 0 38px 12px rgb(99 102 241 / 55%);
     }
 
     .scan-beam-light {
-        background: linear-gradient(90deg, transparent 0%, #f59e0b 12%, #f43f5e 50%, #f59e0b 88%, transparent 100%);
-        box-shadow: 0 0 12px 4px rgb(251 191 36 / 90%), 0 0 38px 12px rgb(244 114 182 / 50%);
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            #f59e0b 12%,
+            #f43f5e 50%,
+            #f59e0b 88%,
+            transparent 100%
+        );
+        box-shadow:
+            0 0 12px 4px rgb(251 191 36 / 90%),
+            0 0 38px 12px rgb(244 114 182 / 50%);
     }
 
     @keyframes scan-image-back-and-forth {
-        from { top: 0; }
-        to { top: calc(100% - 4px); }
+        from {
+            top: 0;
+        }
+        to {
+            top: calc(100% - 4px);
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {

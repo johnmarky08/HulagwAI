@@ -36,11 +36,14 @@
 
     const total = $derived(items.length);
     const active = $derived(items[activeIndex]);
-    const counter = $derived(`${String(activeIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`);
+    const counter = $derived(
+        `${String(activeIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
+    );
 
     onMount(() => {
         // Respect the system's reduced-motion setting: no automatic changes.
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) autoplay = false;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            autoplay = false;
     });
 
     function go(index, dir) {
@@ -92,9 +95,19 @@
             if (window.innerWidth < 640) {
                 // Phones: use most of the screen width so the details have room; still centred.
                 const width = Math.min(window.innerWidth * 0.92, 416);
-                overlayBox = { top: box.top, left: (window.innerWidth - width) / 2, width, height: box.height };
+                overlayBox = {
+                    top: box.top,
+                    left: (window.innerWidth - width) / 2,
+                    width,
+                    height: box.height,
+                };
             } else {
-                overlayBox = { top: box.top, left: box.left, width: box.width, height: box.height };
+                overlayBox = {
+                    top: box.top,
+                    left: box.left,
+                    width: box.width,
+                    height: box.height,
+                };
             }
         }
         detailsOpen = true;
@@ -174,7 +187,9 @@
     // Lift the card: it fades in and settles from a slightly smaller scale to its exact size.
     // Respects reduced motion.
     function lift(node, { duration = 320 } = {}) {
-        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const reduced = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches;
         return {
             duration: reduced ? 0 : duration,
             easing: cubicOut,
@@ -217,7 +232,11 @@
 
 <div class="tech-group flex flex-col">
     <div class="mb-3 flex items-baseline justify-between gap-3">
-        <h3 class="text-sm font-bold uppercase tracking-[.16em] text-indigo-300">{title}</h3>
+        <h3
+            class="text-sm font-bold uppercase tracking-[.16em] text-indigo-300"
+        >
+            {title}
+        </h3>
     </div>
 
     <div
@@ -229,7 +248,10 @@
         tabindex="0"
         onkeydown={handleKey}
     >
-        <span class="absolute left-3 top-3 text-xs font-semibold tabular-nums tracking-wide text-slate-400">{counter}</span>
+        <span
+            class="absolute left-3 top-3 text-xs font-semibold tabular-nums tracking-wide text-slate-400"
+            >{counter}</span
+        >
 
         {#key `${activeIndex}-${detailsOpen}`}
             <!-- Loading bar along the card border: it sweeps for one period; downward changes go clockwise, upward counter-clockwise. -->
@@ -241,7 +263,13 @@
                 style:--delay={started ? "0ms" : `${offset}ms`}
                 aria-hidden="true"
             >
-                <rect x="1" y="1" rx="15" pathLength="100" style="width: calc(100% - 2px); height: calc(100% - 2px)" />
+                <rect
+                    x="1"
+                    y="1"
+                    rx="15"
+                    pathLength="100"
+                    style="width: calc(100% - 2px); height: calc(100% - 2px)"
+                />
             </svg>
         {/key}
         {#key activeIndex}
@@ -265,14 +293,35 @@
                     aria-hidden="true"
                 >
                     {#if active.path}
-                        <svg viewBox="0 0 24 24" class="size-full" fill={active.color}><path d={active.path} /></svg>
+                        <svg
+                            viewBox="0 0 24 24"
+                            class="size-full"
+                            fill={active.color}><path d={active.path} /></svg
+                        >
                     {:else}
-                        <svg viewBox="0 0 24 24" class="size-full" fill="none" stroke={active.color} stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={active.iconPath} /></svg>
+                        <svg
+                            viewBox="0 0 24 24"
+                            class="size-full"
+                            fill="none"
+                            stroke={active.color}
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path d={active.iconPath} /></svg
+                        >
                     {/if}
                 </span>
-                <span class="mt-4 block text-xs font-bold uppercase tracking-[.14em] text-indigo-300">{active.category}</span>
-                <span class="mt-1 block text-xl font-extrabold tracking-tight text-white">{active.name}</span>
-                <span class="mt-2 block text-[11px] text-slate-500">Hover for purpose · click for details</span>
+                <span
+                    class="mt-4 block text-xs font-bold uppercase tracking-[.14em] text-indigo-300"
+                    >{active.category}</span
+                >
+                <span
+                    class="mt-1 block text-xl font-extrabold tracking-tight text-white"
+                    >{active.name}</span
+                >
+                <span class="mt-2 block text-[11px] text-slate-500"
+                    >Hover for purpose · click for details</span
+                >
             </button>
             <span class="tech-tip" role="tooltip">{active.purpose}</span>
         {/key}
@@ -283,7 +332,16 @@
             onclick={previous}
             aria-label={`Previous in ${title}`}
         >
-            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+            <svg
+                viewBox="0 0 24 24"
+                class="size-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg
+            >
         </button>
         <button
             type="button"
@@ -291,14 +349,26 @@
             onclick={next}
             aria-label={`Next in ${title}`}
         >
-            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+            <svg
+                viewBox="0 0 24 24"
+                class="size-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg
+            >
         </button>
-
     </div>
 
     <div class="tech-overlay-root" use:portal>
         {#if detailsOpen}
-            <div class="tech-overlay-backdrop" onclick={closeDetails} aria-hidden="true"></div>
+            <div
+                class="tech-overlay-backdrop"
+                onclick={closeDetails}
+                aria-hidden="true"
+            ></div>
             <div
                 bind:this={dialogEl}
                 class="tech-overlay"
@@ -312,21 +382,52 @@
                 use:fitToViewport
                 transition:lift={{ duration: 320 }}
             >
-                <button type="button" class="tech-close absolute right-3 top-3" onclick={closeDetails} aria-label="Close details">×</button>
+                <button
+                    type="button"
+                    class="tech-close absolute right-3 top-3"
+                    onclick={closeDetails}
+                    aria-label="Close details">×</button
+                >
                 <span
                     class="mx-auto grid size-16 place-items-center rounded-2xl bg-white p-3 shadow-lg shadow-indigo-500/20"
                     aria-hidden="true"
                 >
                     {#if active.path}
-                        <svg viewBox="0 0 24 24" class="size-full" fill={active.color}><path d={active.path} /></svg>
+                        <svg
+                            viewBox="0 0 24 24"
+                            class="size-full"
+                            fill={active.color}><path d={active.path} /></svg
+                        >
                     {:else}
-                        <svg viewBox="0 0 24 24" class="size-full" fill="none" stroke={active.color} stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={active.iconPath} /></svg>
+                        <svg
+                            viewBox="0 0 24 24"
+                            class="size-full"
+                            fill="none"
+                            stroke={active.color}
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path d={active.iconPath} /></svg
+                        >
                     {/if}
                 </span>
-                <p class="mt-4 text-xs font-bold uppercase tracking-[.14em] text-indigo-300">{active.category}</p>
-                <h4 id={titleId} class="mt-1 text-2xl font-extrabold tracking-tight text-white">{active.name}</h4>
-                <p class="mt-3 text-sm font-semibold text-indigo-100">{active.purpose}</p>
-                <p class="mt-3 text-sm leading-6 text-slate-300">{active.details}</p>
+                <p
+                    class="mt-4 text-xs font-bold uppercase tracking-[.14em] text-indigo-300"
+                >
+                    {active.category}
+                </p>
+                <h4
+                    id={titleId}
+                    class="mt-1 text-2xl font-extrabold tracking-tight text-white"
+                >
+                    {active.name}
+                </h4>
+                <p class="mt-3 text-sm font-semibold text-indigo-100">
+                    {active.purpose}
+                </p>
+                <p class="mt-3 text-sm leading-6 text-slate-300">
+                    {active.details}
+                </p>
                 <a
                     class="mt-5 inline-flex min-h-10 items-center rounded-xl border border-indigo-500/50 bg-indigo-950/35 px-4 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-900/50 hover:text-white"
                     href={active.link}
@@ -445,7 +546,8 @@
         stroke-dasharray: 100 100;
         stroke-dashoffset: 100;
         filter: drop-shadow(0 0 4px rgb(103 232 249 / 80%));
-        animation: border-run var(--period, 6000ms) linear var(--delay, 0ms) both;
+        animation: border-run var(--period, 6000ms) linear var(--delay, 0ms)
+            both;
     }
     /* Upward changes sweep the border counter-clockwise, matching the content's direction. */
     .border-run.border-rev {
@@ -472,8 +574,17 @@
     }
     .tech-beam {
         height: 3px;
-        background: linear-gradient(90deg, transparent 0%, #a5b4fc 12%, #67e8f9 50%, #a5b4fc 88%, transparent 100%);
-        box-shadow: 0 0 12px 4px rgb(103 232 249 / 80%), 0 0 36px 10px rgb(99 102 241 / 50%);
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            #a5b4fc 12%,
+            #67e8f9 50%,
+            #a5b4fc 88%,
+            transparent 100%
+        );
+        box-shadow:
+            0 0 12px 4px rgb(103 232 249 / 80%),
+            0 0 36px 10px rgb(99 102 241 / 50%);
         opacity: 0;
     }
     .beam-down {
