@@ -25,7 +25,9 @@ def compute_logits(ctx: Ctx, paths: list[str], members: dict, transform=None) ->
     from torch.utils.data import DataLoader
 
     out = np.full((len(paths), len(ORDER)), np.nan, dtype=np.float64)
-    dl = DataLoader(_DS(paths), batch_size=16, num_workers=ctx.prof["workers"], collate_fn=list)
+    # full-size decoded images travel between processes here: keep only ~10 in flight (a 24 MP photo is ~70 MB)
+    w = ctx.prof["workers"]
+    dl = DataLoader(_DS(paths), batch_size=2, num_workers=w, collate_fn=list, **({"prefetch_factor": 2} if w else {}))
     for n, batch in enumerate(dl):
         for i, img in batch:
             if img is None:
@@ -34,6 +36,6 @@ def compute_logits(ctx: Ctx, paths: list[str], members: dict, transform=None) ->
                 img = transform(img, i)
             for j, name in enumerate(ORDER):
                 out[i, j] = members[name].logit(img)
-        if n % 100 == 0:
-            log.info("logits %d/%d", min((n + 1) * 16, len(paths)), len(paths))
+        if n % 800 == 0:
+            log.info("logits %d/%d", min((n + 1) * 2, len(paths)), len(paths))
     return out

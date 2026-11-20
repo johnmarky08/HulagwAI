@@ -5,3 +5,7 @@ pandas>=2.2
 tqdm>=4.66
 requests>=2.32
 kagglehub>=0.3
+datasets>=3.0          # pulls in the Hugging Face stack
+pyarrow>=15            # OpenFake: read parquet columns directly (low RAM)
+huggingface_hub>=0.23  # OpenFake: HTTP range reads of the parquet files
+psutil>=5.9            # RAM checks

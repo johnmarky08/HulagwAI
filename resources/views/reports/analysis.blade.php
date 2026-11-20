@@ -53,6 +53,41 @@
 </tr></table>
 <div class="box muted"><b>How to read this score.</b> {{ $r['how_to_read'] }} Detection is probabilistic and can be wrong in either direction; compression, editing and newer image generators can affect reliability.</div>
 
+
+@php
+  $attr = (array) ($full['result']['attribution'] ?? []);
+  $ev = (array) ($full['result']['evidence'] ?? []);
+  $am = $metrics['attribution'] ?? null;
+@endphp
+<h2>2a. Likely generator</h2>
+@if(!empty($attr['available']))
+  <p><b>{{ $attr['headline'] }}</b>
+  <span class="muted">({{ ($attr['source'] ?? 'model') === 'metadata' ? 'named in the file itself' : 'estimated by the attribution model' }})</span></p>
+  <table><tr><th>Candidate family</th><th class="num">Probability</th></tr>
+  @foreach($attr['top'] as $cand)
+    <tr><td>{{ $cand['label'] }}</td><td class="num">{{ $cand['percent'] }}%</td></tr>
+  @endforeach</table>
+  @if(!empty($attr['note']))<p class="muted">{{ $attr['note'] }}</p>@endif
+@else
+  <p class="muted">Generator attribution is not available for this image ({{ str_replace('_', ' ', $attr['reason'] ?? 'not computed') }}).</p>
+@endif
+<p class="muted">{{ $attr['disclaimer'] ?? config('hulagwai.notice.attribution') }}</p>
+
+<h2>2b. Why it may look AI-generated</h2>
+@if(count($ev['flags'] ?? []))
+  <table><tr><th style="width:14%">Strength</th><th style="width:20%">Category</th><th>Observation</th></tr>
+  @foreach($ev['flags'] as $fl)
+    <tr><td class="sev-{{ $fl['strength'] === 'strong' ? 'strong_ai' : ($fl['strength'] === 'moderate' ? 'info' : 'weak_real') }}">{{ $fl['strength'] }}</td><td>{{ $fl['category'] }}</td><td><b>{{ $fl['title'] }}</b><br>{{ $fl['detail'] }}</td></tr>
+  @endforeach</table>
+@else
+  <p class="muted">No specific signals stood out for this image.</p>
+@endif
+@if($heatmap)
+  <p class="muted" style="margin-bottom:2px">Detector heat map: warmer colours mark patches the pixel-level detector scores as more AI-like.</p>
+  <img src="{{ $heatmap }}" style="max-width: 62%; border-radius: 4px">
+@endif
+<p class="muted">{{ $ev['note'] ?? config('hulagwai.notice.evidence') }}</p>
+
 <h2>2. File</h2>
 <table>
   <tr><th style="width:26%">File name</th><td>{{ $f['filename'] }}</td></tr>
@@ -141,6 +176,42 @@
 </table>
 @endif
 
+@if(!empty($metrics['comparison']['rows']))
+<h2>Model comparison (baselines vs final model)</h2>
+<table><tr><th>Model</th><th>Type</th><th class="num">Accuracy</th><th class="num">Recall</th><th class="num">F1</th><th class="num">ROC-AUC (test)</th><th class="num">ROC-AUC (val)</th></tr>
+@foreach($metrics['comparison']['rows'] as $c)
+  <tr><td>{{ $c['name'] }}@if(($c['family'] ?? '') === 'final') <b>(selected)</b>@endif</td><td>{{ $c['family'] ?? '' }}</td><td class="num">{{ $pct($c['accuracy'] ?? null) }}</td><td class="num">{{ $pct($c['recall'] ?? null) }}</td><td class="num">{{ $n4($c['f1'] ?? null) }}</td><td class="num">{{ $n4($c['roc_auc'] ?? null) }}</td><td class="num">{{ $n4($c['val_roc_auc'] ?? null) }}</td></tr>
+@endforeach</table>
+<p class="muted">{{ $metrics['comparison']['basis'] ?? '' }}</p>
+@endif
+
+@if(!empty($metrics['cross_validation']))
+<p class="muted"><b>5-fold cross-validation</b> (training split): accuracy {{ $pct($metrics['cross_validation']['accuracy']['mean'] ?? null, 2) }} ± {{ $pct($metrics['cross_validation']['accuracy']['std'] ?? null, 2) }}, ROC-AUC {{ $n4($metrics['cross_validation']['roc_auc']['mean'] ?? null) }} ± {{ $n4($metrics['cross_validation']['roc_auc']['std'] ?? null) }}.</p>
+@endif
+
+@if(!empty($metrics['errors']['by_resolution']))
+<h2>Error analysis by image size</h2>
+<table><tr><th>Image size</th><th class="num">Images</th><th class="num">Accuracy</th></tr>
+@foreach($metrics['errors']['by_resolution'] as $k => $v)
+  <tr><td>{{ $k }}</td><td class="num">{{ number_format($v['n'] ?? 0) }}</td><td class="num">{{ $pct($v['accuracy'] ?? null) }}</td></tr>
+@endforeach</table>
+<p class="muted">{{ $metrics['errors']['note'] ?? '' }}</p>
+@endif
+
+@if(!empty($am['test']))
+<h2>Generator-attribution model (held-out test)</h2>
+<p class="muted">Closed set of {{ count($am['families'] ?? []) }} generator families; chance level {{ $pct($am['test']['chance_level'] ?? null) }}. Answers "unknown" below confidence τ = {{ $am['tau'] ?? '—' }}.</p>
+<table>
+  <tr><th>Accuracy</th><th>Top-3 accuracy</th><th>Macro-F1</th><th>Coverage (answered)</th><th>Accuracy when answered</th><th>ECE</th></tr>
+  <tr><td>{{ $pct($am['test']['accuracy'] ?? null, 2) }}</td><td>{{ $pct($am['test']['top3_accuracy'] ?? null, 2) }}</td><td>{{ $n4($am['test']['macro_f1'] ?? null) }}</td><td>{{ $pct($am['test']['coverage'] ?? null) }}</td><td>{{ $pct($am['test']['accuracy_when_accepted'] ?? null, 2) }}</td><td>{{ $n4($am['test']['ece'] ?? null) }}</td></tr>
+</table>
+<table><tr><th>Family</th><th class="num">Images</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th></tr>
+@foreach(($am['test']['per_family'] ?? []) as $fam => $fm)
+  <tr><td>{{ $am['labels'][$fam] ?? $fam }}</td><td class="num">{{ number_format($fm['n'] ?? 0) }}</td><td class="num">{{ $pct($fm['precision'] ?? null) }}</td><td class="num">{{ $pct($fm['recall'] ?? null) }}</td><td class="num">{{ $n4($fm['f1'] ?? null) }}</td></tr>
+@endforeach</table>
+<p class="muted">{{ $am['note'] ?? '' }}</p>
+@endif
+
 @if(!empty($metrics['per_source']))
 <h2>Per dataset</h2>
 <table><tr><th>Dataset</th><th class="num">Images</th><th class="num">Accuracy</th><th class="num">Recall</th><th class="num">Specificity</th><th class="num">ROC-AUC</th></tr>
@@ -183,6 +254,11 @@
 <div class="box"><b>Model has not been evaluated yet.</b> Metrics such as accuracy, precision, recall, F1, ROC-AUC and MAE belong to the <i>model</i>, not to a single image, and are produced by <span class="mono">ml-service/training/07_evaluate.py</span> after training. Until the bundle containing <span class="mono">metrics.json</span> is installed this section stays empty rather than showing placeholder numbers.</div>
 @endif
 
+<h2>Intended use, limitations &amp; responsible use</h2>
+<p><b>Intended use.</b> {{ config('hulagwai.notice.intended_use') }}</p>
+<ul>@foreach(config('hulagwai.notice.limitations') as $l)<li>{{ $l }}</li>@endforeach</ul>
+<p><b>Responsible use.</b></p>
+<ul>@foreach(config('hulagwai.notice.responsible_use') as $l)<li>{{ $l }}</li>@endforeach</ul>
 <h2>Limitations</h2>
 <p class="muted">HulagwAI is a statistical system. It can misclassify real photographs as AI-generated and vice-versa, especially for heavily compressed, screenshotted, resized or edited images, and for generators released after training. Embedded metadata can be removed or forged. Treat this report as one signal and verify the image's source before drawing conclusions.</p>
 </body>

@@ -6,7 +6,10 @@
         loginForm as form,
         submitLogin,
         toggleLoginPassword,
+        googleErrorFromUrl,
     } from "../../official/authPages.svelte.js";
+
+    const googleError = googleErrorFromUrl();
 </script>
 
 <svelte:head><title>HulagwAI · Log in</title></svelte:head>
@@ -23,7 +26,7 @@
                     Log in to revisit your saved analysis results.
                 </p>
                 <div class="mt-6">
-                    <GoogleSignInButton />
+                    <GoogleSignInButton label="Continue with Google" />
                 </div>
                 <div
                     class="my-6 flex items-center gap-3 text-xs text-slate-500"
@@ -31,6 +34,12 @@
                     <span class="h-px flex-1 bg-slate-800"></span>or continue
                     with email<span class="h-px flex-1 bg-slate-800"></span>
                 </div>
+                {#if googleError && !form.error}<p
+                        class="mb-4 rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-300"
+                        role="alert"
+                    >
+                        {googleError}
+                    </p>{/if}
                 {#if form.error}<p
                         class="mb-4 rounded-lg border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-300"
                         role="alert"
@@ -69,12 +78,10 @@
                         ></label
                     >
                     <div class="text-right">
-                        <span
-                            class="text-xs text-slate-500"
-                            title="Password reset is in development"
-                            >Forgot password? <span class="text-indigo-300"
-                                >In Development</span
-                            ></span
+                        <a
+                            use:inertia
+                            class="text-xs text-indigo-300 underline-offset-4 hover:underline"
+                            href="/forgot-password">Forgot password?</a
                         >
                     </div>
                     <button

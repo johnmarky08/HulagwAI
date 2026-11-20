@@ -98,6 +98,33 @@ def selective_report(y, p, real_max: float, ai_min: float) -> dict[str, float]:
             "real_max": real_max, "ai_min": ai_min}
 
 
+def roc_curve(y, p, max_points: int = 60) -> dict[str, list[float]]:
+    """ROC points (fpr, tpr) down-sampled for plotting."""
+    y, p = _arr(y, p)
+    order = np.argsort(-p, kind="mergesort")
+    ys, ps = y[order], p[order]
+    last = np.r_[np.where(np.diff(ps))[0], len(ps) - 1]
+    tp, fp = np.cumsum(ys)[last], (last + 1) - np.cumsum(ys)[last]
+    tpr = np.r_[0.0, tp / max(1, ys.sum())]
+    fpr = np.r_[0.0, fp / max(1, (1 - ys).sum())]
+    if len(fpr) > max_points:
+        keep = np.unique(np.linspace(0, len(fpr) - 1, max_points).astype(int))
+        fpr, tpr = fpr[keep], tpr[keep]
+    return {"fpr": [round(float(v), 5) for v in fpr], "tpr": [round(float(v), 5) for v in tpr]}
+
+
+def calibration_bins(y, p, bins: int = 10) -> list[dict]:
+    """Reliability diagram data: predicted P(AI) vs observed share of AI images."""
+    y, p = _arr(y, p)
+    idx = np.clip((p * bins).astype(int), 0, bins - 1)
+    out = []
+    for b in range(bins):
+        m = idx == b
+        out.append({"bin": f"{b / bins:.1f}-{(b + 1) / bins:.1f}", "n": int(m.sum()),
+                    "mean_p": float(p[m].mean()) if m.any() else None, "frac_ai": float(y[m].mean()) if m.any() else None})
+    return out
+
+
 def clean(obj):
     """NaN/inf -> None so the report is valid JSON."""
     if isinstance(obj, dict):

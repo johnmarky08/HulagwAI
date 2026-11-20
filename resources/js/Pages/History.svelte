@@ -7,10 +7,13 @@
         handleHistorySearch,
         handleResultFilter,
         handleRangeFilter,
+        handleSortFilter,
         handleHistoryPage,
         previousHistoryPage,
         nextHistoryPage,
         exportHistory,
+        deleteAnalysis,
+        clearAllHistory,
         formatDate,
     } from "../official/controller.svelte.js";
     import LoginGate from "./Components/LoginGate.svelte";
@@ -67,7 +70,7 @@
                 {/each}
             </section>
             <div
-                class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]"
+                class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-[minmax(200px,1fr)_170px_170px_190px]"
             >
                 <label
                     class="col-span-2 flex h-12 items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 md:col-span-1"
@@ -96,9 +99,15 @@
                     ><option>Last 30 days</option><option>Last 90 days</option
                     ></select
                 >
-                <button
-                    class="col-span-2 h-12 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-5 text-sm font-semibold md:col-span-1"
-                    onclick={exportHistory}>↓ &nbsp; Export history</button
+                <select
+                    class="col-span-2 h-12 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-300 md:col-span-1"
+                    aria-label="Sort results"
+                    value={ui.sortFilter}
+                    onchange={handleSortFilter}
+                    ><option>Newest first</option><option>Oldest first</option
+                    ><option>Highest confidence</option><option
+                        >Lowest confidence</option
+                    ></select
                 >
             </div>
             {#if ui.historyError}<p
@@ -109,9 +118,38 @@
             <section
                 class="rounded-xl border border-indigo-500/50 bg-slate-900/80 p-3 sm:p-5"
             >
-                <div class="flex items-center justify-between px-2">
-                    <h2 class="text-lg font-bold">Recent analyses</h2>
-                    <span class="text-xs text-slate-400">Newest first</span>
+                <div
+                    class="flex flex-wrap items-center justify-between gap-3 px-2"
+                >
+                    <div>
+                        <h2 class="text-lg font-bold">Recent analyses</h2>
+                        <span class="text-xs text-slate-400"
+                            >{ui.sortFilter}</span
+                        >
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            class="h-10 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-4 text-xs font-semibold disabled:opacity-50"
+                            onclick={() => exportHistory("csv")}
+                            disabled={!ui.stats.total}>↓ &nbsp;Export CSV</button
+                        >
+                        <button
+                            type="button"
+                            class="h-10 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-4 text-xs font-semibold disabled:opacity-50"
+                            onclick={() => exportHistory("json")}
+                            disabled={!ui.stats.total}>↓ &nbsp;Export JSON</button
+                        >
+                        <button
+                            type="button"
+                            class="h-10 rounded-xl border border-rose-800 bg-rose-950/40 px-4 text-xs font-semibold text-rose-300 disabled:opacity-50"
+                            onclick={clearAllHistory}
+                            disabled={!ui.stats.total || ui.clearingHistory}
+                            >{ui.clearingHistory
+                                ? "Clearing…"
+                                : "Clear history"}</button
+                        >
+                    </div>
                 </div>
                 <div class="mt-4 hidden overflow-x-auto md:block">
                     <table
@@ -182,12 +220,30 @@
                                         ><td class="p-3 text-slate-400"
                                             >{formatDate(row.analyzed_at)}</td
                                         ><td class="p-3"
-                                            ><a
-                                                use:inertia
-                                                class="text-xs font-semibold hover:text-indigo-300"
-                                                href={"/detect?analysis=" +
-                                                    row.id}>View ›</a
-                                            ></td
+                                            ><div
+                                                class="flex items-center justify-end gap-4"
+                                            >
+                                                <a
+                                                    use:inertia
+                                                    class="text-xs font-semibold hover:text-indigo-300"
+                                                    href={"/detect?analysis=" +
+                                                        row.id}>View ›</a
+                                                ><button
+                                                    type="button"
+                                                    class="text-xs font-semibold text-rose-400 hover:text-rose-300 disabled:opacity-50"
+                                                    aria-label={`Delete the analysis of ${row.filename}`}
+                                                    disabled={ui.deletingId ===
+                                                        row.id}
+                                                    onclick={() =>
+                                                        deleteAnalysis(
+                                                            row.id,
+                                                            row.filename,
+                                                        )}
+                                                    >{ui.deletingId === row.id
+                                                        ? "Deleting…"
+                                                        : "Delete"}</button
+                                                >
+                                            </div></td
                                         ></tr
                                     >{/each}{/if}
                         </tbody>
@@ -262,12 +318,29 @@
                                                 "inconclusive"}
                                             >{row.label}</span
                                         >
-                                        <a
-                                            use:inertia
-                                            class="text-xs font-semibold text-indigo-300"
-                                            href={"/detect?analysis=" + row.id}
-                                            >View result ›</a
-                                        >
+                                        <span class="flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                class="text-xs font-semibold text-rose-400 disabled:opacity-50"
+                                                aria-label={`Delete the analysis of ${row.filename}`}
+                                                disabled={ui.deletingId ===
+                                                    row.id}
+                                                onclick={() =>
+                                                    deleteAnalysis(
+                                                        row.id,
+                                                        row.filename,
+                                                    )}
+                                                >{ui.deletingId === row.id
+                                                    ? "Deleting…"
+                                                    : "Delete"}</button
+                                            >
+                                            <a
+                                                use:inertia
+                                                class="text-xs font-semibold text-indigo-300"
+                                                href={"/detect?analysis=" +
+                                                    row.id}>View result ›</a
+                                            >
+                                        </span>
                                     </div>
                                 </div>
                             </article>

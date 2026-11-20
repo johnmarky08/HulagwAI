@@ -21,8 +21,10 @@ def feat(args):
     return frequency.features(img)
 
 
-def extract(df, aug_every_other: bool, procs: int, seed: int):
-    jobs = [(p, seed + i, aug_every_other and i % 2 == 1) for i, p in enumerate(df["path"])]
+def extract(df, aug: str, procs: int, seed: int):
+    """aug = 'all' (training: every image goes through the random degradations, which leave ~20 % untouched) or
+    'half' (validation: every other image degraded, so the score reflects both clean and re-compressed inputs)."""
+    jobs = [(p, seed + i, aug == "all" or (aug == "half" and i % 2 == 1)) for i, p in enumerate(df["path"])]
     with Pool(procs) as pool:
         res = pool.map(feat, jobs, chunksize=64)
     keep = [i for i, r in enumerate(res) if r is not None]
@@ -44,8 +46,9 @@ def main() -> None:
     va = df[df.split == "val"].sample(n=min(cap // 5 + 1, (df.split == "val").sum()), random_state=ctx.args.seed)
     procs = max(1, (os.cpu_count() or 2) - 0)
     log.info("extracting frequency features: %d train / %d val (%d procs)", len(tr), len(va), procs)
-    xtr, ytr = extract(tr, True, procs, ctx.args.seed)
-    xva, yva = extract(va, True, procs, ctx.args.seed + 1)
+    xtr, ytr = extract(tr, "all", procs, ctx.args.seed)
+    xva, yva = extract(va, "half", procs, ctx.args.seed + 1)
+    np.savez(ctx.features / "freq_feats.npz", xtr=xtr, ytr=ytr, xva=xva, yva=yva)   # reused by the scikit-learn baselines
     mean, std = xtr.mean(0), xtr.std(0) + 1e-6
     f = lambda a: torch.tensor((a - mean) / std, dtype=torch.float32)  # noqa: E731
 

@@ -79,7 +79,7 @@
                     use:inertia
                     href={item.href}
                     aria-current={active === item.id ? "page" : undefined}
-                    class="nav-link inline-flex min-w-28 items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-3 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white md:px-5"
+                    class="nav-link inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-3 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white lg:min-w-28 xl:px-5"
                     >{item.label}</a
                 >
             {/each}

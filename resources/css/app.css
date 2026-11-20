@@ -1290,7 +1290,7 @@ html:has(.app-shell.light-mode)::-webkit-scrollbar-thumb:hover {
     display: none;
 }
 
-/* Pointer cursor on every clickable element; disabled controls show not-allowed. */
+/* Cursors: pointer on everything clickable, text on typing fields, not-allowed on disabled controls. */
 a[href],
 area[href],
 button,
@@ -1300,20 +1300,55 @@ button,
 [role="menuitem"],
 select,
 summary,
-label:has(input:not(:disabled)),
+details > summary,
+label:has(
+        input[type="file"]:not(:disabled),
+        input[type="checkbox"]:not(:disabled),
+        input[type="radio"]:not(:disabled)
+    ),
 input[type="button"],
 input[type="submit"],
 input[type="reset"],
 input[type="file"],
 input[type="checkbox"],
 input[type="radio"],
-input[type="range"] {
+input[type="range"],
+input[type="color"] {
     cursor: pointer;
 }
+input:not(
+        [type="button"],
+        [type="submit"],
+        [type="reset"],
+        [type="file"],
+        [type="checkbox"],
+        [type="radio"],
+        [type="range"],
+        [type="color"]
+    ),
+textarea,
+[contenteditable="true"] {
+    cursor: text;
+}
+/* Copyable values (e.g. the extension pairing code). */
+code {
+    cursor: text;
+}
 button:disabled,
+select:disabled,
+textarea:disabled,
 [aria-disabled="true"],
-input:disabled {
+input:disabled,
+fieldset:disabled * {
     cursor: not-allowed;
+}
+/* Busy submit buttons (busy state uses Tailwind's disabled:cursor-wait) keep their wait cursor. */
+button:disabled[class~="disabled:cursor-wait"] {
+    cursor: wait;
+}
+/* Tooltip-only elements explain themselves on hover. */
+abbr[title] {
+    cursor: help;
 }
 
 /* Dashboard banner copy must stay readable on the light hero. */

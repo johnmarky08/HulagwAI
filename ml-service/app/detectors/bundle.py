@@ -8,6 +8,7 @@ from typing import Any
 
 from PIL import Image
 
+from app.attribution import AttributionHead
 from app.detectors import fusion
 from app.detectors.members import MEMBERS
 
@@ -55,8 +56,23 @@ class Bundle:
                 raise BundleError(f"unknown or unconfigured member {m!r}")
             self.members.append(MEMBERS[m](self.cfg[m], root))
 
+        self.attribution: AttributionHead | None = None
+        if "attribution" in self.cfg and (root / "attribution_head.safetensors").is_file():
+            self.attribution = AttributionHead(self.cfg["attribution"], root)
+
     def logits(self, img: Image.Image) -> dict[str, float]:
         return {m.name: m.logit(img) for m in self.members}
+
+    def analyze(self, img: Image.Image) -> tuple[dict[str, float], dict[str, Any]]:
+        """Logits AND embeddings from a single pass per member (embeddings feed generator attribution)."""
+        logits, feats = {}, {}
+        for m in self.members:
+            z, f = m.analyze(img)
+            logits[m.name], feats[m.name] = z, f
+        return logits, feats
+
+    def cnn_member(self):
+        return next((m for m in self.members if m.name == "cnn"), None)
 
     def roles(self) -> dict[str, str]:
         return {m.name: m.role for m in self.members}

@@ -16,16 +16,19 @@ from app import preprocess as P
 
 
 def degrade(img: Image.Image, rng: random.Random, strength: float = 1.0) -> Image.Image:
-    if rng.random() < 0.30 * strength:
-        img = img.filter(ImageFilter.GaussianBlur(rng.uniform(0.1, 2.0)))
-    if rng.random() < 0.30 * strength and min(img.size) >= 64:
+    """JPEG is applied to most images (80 %): in OpenFake / GenImage the real photos are JPEG while most fakes are
+    PNG, so with rarer JPEG the models learn "JPEG grid = real" - and real users mostly upload re-saved JPEGs of AI
+    images. Compressing (almost) everything removes that shortcut and matches what the detector sees in production."""
+    if rng.random() < 0.25 * strength:
+        img = img.filter(ImageFilter.GaussianBlur(rng.uniform(0.1, 1.5)))
+    if rng.random() < 0.35 * strength and min(img.size) >= 64:
         s = rng.uniform(0.5, 0.95)
         w, h = img.size
         small = img.resize((max(16, int(w * s)), max(16, int(h * s))), rng.choice([Image.BILINEAR, Image.BICUBIC, Image.LANCZOS]))
         img = small.resize((w, h), rng.choice([Image.BILINEAR, Image.BICUBIC])) if rng.random() < 0.5 else small
-    if rng.random() < 0.50 * strength:
+    if rng.random() < 0.80 * strength:
         buf = io.BytesIO()
-        img.save(buf, "JPEG", quality=rng.randint(55, 100))
+        img.save(buf, "JPEG", quality=rng.randint(60, 98))
         buf.seek(0)
         img = Image.open(buf).convert("RGB")
     return img

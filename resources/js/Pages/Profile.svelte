@@ -10,8 +10,72 @@
         logoutProfile,
         deleteProfile,
     } from "../official/profilePage.svelte.js";
+    import {
+        ui,
+        exportHistory,
+        clearAllHistory,
+    } from "../official/controller.svelte.js";
+    import { auth } from "../api/auth";
+    import { errorMessage } from "../api/client";
+    import {
+        session,
+        refreshSession,
+    } from "../api/session.svelte.js";
+    import { googleErrorFromUrl } from "../official/authPages.svelte.js";
+
+    let cleared = $state(false);
+    let unlinking = $state(false);
+    const linkedNow =
+        typeof location !== "undefined" &&
+        new URLSearchParams(location.search).get("google") === "linked";
+    const googleError = googleErrorFromUrl();
+    const hasPassword = $derived(profile.me?.user?.has_password !== false);
+    const googleConnected = $derived(profile.me?.user?.google_connected === true);
+    const googleAvailable = $derived(
+        (profile.me?.auth ?? session.value?.auth)?.google === true,
+    );
+
+    async function unlinkGoogle() {
+        if (!window.confirm("Disconnect Google from your HulagwAI account?")) return;
+        unlinking = true;
+        profile.error = "";
+        try {
+            await auth.unlinkGoogle();
+            if (profile.me?.user) profile.me.user.google_connected = false;
+            void refreshSession();
+        } catch (error) {
+            profile.error = errorMessage(error);
+        } finally {
+            unlinking = false;
+        }
+    }
+    const mb = (bytes) => (bytes / 1048576).toFixed(1);
+    const quota = $derived(profile.me?.quota ?? null);
+    const quotaShare = $derived(
+        quota?.limit_bytes
+            ? Math.min(
+                  100,
+                  Math.round((quota.used_bytes / quota.limit_bytes) * 100),
+              )
+            : 0,
+    );
+
+    async function clearHistory() {
+        cleared = false;
+        if (await clearAllHistory()) {
+            cleared = true;
+            // Refresh the storage figure after the images are gone.
+            try {
+                const fresh = await auth.me();
+                if (profile.me) profile.me.quota = fresh.quota;
+            } catch {
+                /* the next page load refreshes it */
+            }
+        }
+    }
 
     onMount(() => {
+        ui.historyError = "";
         void loadProfile();
     });
 </script>
@@ -68,6 +132,30 @@
                 Your account details have been saved.
             </p>
         {/if}
+        {#if linkedNow && !profile.error}
+            <p
+                class="mb-4 rounded-xl border border-emerald-800 bg-emerald-950/30 p-3 text-sm text-emerald-300"
+                role="status"
+            >
+                Your Google account is now connected.
+            </p>
+        {/if}
+        {#if googleError && !profile.error}
+            <p
+                class="mb-4 rounded-xl border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-300"
+                role="alert"
+            >
+                {googleError}
+            </p>
+        {/if}
+        {#if profile.passwordChanged}
+            <p
+                class="mb-4 rounded-xl border border-emerald-800 bg-emerald-950/30 p-3 text-sm text-emerald-300"
+                role="status"
+            >
+                Your password has been updated.
+            </p>
+        {/if}
 
         {#if profile.loading}
             <p class="py-16 text-center text-sm text-slate-400">
@@ -110,11 +198,14 @@
                         class="mt-5 flex flex-wrap items-center justify-between gap-4"
                     >
                         <div class="text-sm text-slate-200">
-                            Password<span
-                                class="mt-1 block text-xs tracking-[.2em] text-slate-400"
-                                aria-label="Password is hidden"
-                                >•••••••••••</span
-                            >
+                            Password{#if hasPassword}<span
+                                    class="mt-1 block text-xs tracking-[.2em] text-slate-400"
+                                    aria-label="Password is hidden"
+                                    >•••••••••••</span
+                                >{:else}<span
+                                    class="mt-1 block text-xs text-slate-400"
+                                    >Not set. You sign in with Google.</span
+                                >{/if}
                         </div>
                         <button
                             type="button"
@@ -126,8 +217,10 @@
                             }}
                         >
                             {profile.passwordFormOpen
-                                ? "Cancel password change"
-                                : "Change password"}
+                                ? "Cancel"
+                                : hasPassword
+                                  ? "Change password"
+                                  : "Set a password"}
                         </button>
                     </div>
                     <button
@@ -143,7 +236,7 @@
                         class="mt-5 grid gap-4 border-t border-slate-800 pt-5 sm:grid-cols-2"
                         onsubmit={changeProfilePassword}
                     >
-                        <label class="text-sm text-slate-200 sm:col-span-2"
+                        {#if hasPassword}<label class="text-sm text-slate-200 sm:col-span-2"
                             >Current password
                             <input
                                 class="mt-2 block w-full rounded-xl border border-slate-800 bg-[#0a0c13] px-4 py-3 text-sm text-slate-100 outline-none focus:border-indigo-500"
@@ -152,7 +245,7 @@
                                 bind:value={profile.currentPassword}
                                 required
                             />
-                        </label>
+                        </label>{/if}
                         <label class="text-sm text-slate-200"
                             >New password
                             <input
@@ -180,8 +273,10 @@
                                 disabled={profile.changingPassword}
                             >
                                 {profile.changingPassword
-                                    ? "Updating…"
-                                    : "Update password"}
+                                    ? "Saving…"
+                                    : hasPassword
+                                      ? "Update password"
+                                      : "Set password"}
                             </button>
                         </div>
                     </form>
@@ -190,38 +285,136 @@
 
             <section
                 class="mb-6 rounded-2xl border border-slate-800 bg-[#111521] p-6 sm:p-7"
+                aria-labelledby="connected-heading"
             >
-                <h2 class="text-base font-bold text-slate-100">
+                <h2
+                    id="connected-heading"
+                    class="text-base font-bold text-slate-100"
+                >
                     Connected accounts
                 </h2>
                 <p class="mt-1 text-xs text-slate-400">
                     A quicker way to log in to your history.
                 </p>
-                <div class="mt-5 space-y-4">
-                    {#each [{ name: "Google", mark: "G", classes: "text-emerald-400" }] as provider}
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="flex items-center gap-3">
-                                <span
-                                    class="grid size-8 place-items-center text-xl font-bold {provider.classes}"
-                                    aria-hidden="true">{provider.mark}</span
-                                >
-                                <span class="text-sm text-slate-100"
-                                    >{provider.name}<small
-                                        class="mt-1 block text-xs text-slate-400"
-                                        >Not connected</small
-                                    ></span
-                                >
-                            </span>
-                            <button
-                                type="button"
-                                class="cursor-not-allowed rounded-lg border border-slate-800 bg-slate-800/50 px-4 py-2 text-xs text-slate-500"
-                                disabled
-                                title="Social sign-in is not available yet"
-                                >Connect</button
+                <div class="mt-5 flex items-center justify-between gap-4">
+                    <span class="flex items-center gap-3">
+                        <span
+                            class="grid size-8 place-items-center text-xl font-bold text-emerald-400"
+                            aria-hidden="true">G</span
+                        >
+                        <span class="text-sm text-slate-100"
+                            >Google<small
+                                class="mt-1 block text-xs text-slate-400"
+                                >{googleConnected
+                                    ? `Connected as ${profile.me.user.email}`
+                                    : "Not connected"}</small
+                            ></span
+                        >
+                    </span>
+                    {#if googleConnected}
+                        <button
+                            type="button"
+                            class="rounded-lg border border-slate-700 bg-slate-800/70 px-4 py-2 text-xs text-slate-100 transition hover:border-rose-500/60 disabled:opacity-50"
+                            disabled={unlinking || !hasPassword}
+                            title={hasPassword
+                                ? "Disconnect Google"
+                                : "Set a password first so you can still log in"}
+                            onclick={unlinkGoogle}
+                            >{unlinking ? "Disconnecting…" : "Disconnect"}</button
+                        >
+                    {:else if googleAvailable}
+                        <a
+                            class="rounded-lg border border-indigo-500 bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500"
+                            href={auth.googleUrl}>Connect</a
+                        >
+                    {:else}
+                        <button
+                            type="button"
+                            class="rounded-lg border border-slate-800 bg-slate-800/50 px-4 py-2 text-xs text-slate-500"
+                            disabled
+                            title="Google sign-in is not configured on this server"
+                            >Connect</button
+                        >
+                    {/if}
+                </div>
+                {#if googleConnected && !hasPassword}
+                    <p class="mt-3 text-xs text-slate-400">
+                        Set a password above before disconnecting Google, so you
+                        can still log in.
+                    </p>
+                {/if}
+            </section>
+
+            <section
+                class="mb-6 rounded-2xl border border-slate-800 bg-[#111521] p-6 sm:p-7"
+                aria-labelledby="storage-heading"
+            >
+                <h2
+                    id="storage-heading"
+                    class="text-base font-bold text-slate-100"
+                >
+                    Storage & data
+                </h2>
+                <p class="mt-1 text-xs text-slate-400">
+                    Uploaded images are stored encrypted until you delete them.
+                </p>
+                {#if quota}
+                    <div class="mt-5">
+                        <div
+                            class="flex items-baseline justify-between gap-3 text-sm text-slate-200"
+                        >
+                            <span>Storage used</span>
+                            <span class="tabular-nums text-slate-400"
+                                >{mb(quota.used_bytes)} / {mb(
+                                    quota.limit_bytes,
+                                )} MB</span
                             >
                         </div>
-                    {/each}
+                        <div
+                            class="mt-2 h-2 overflow-hidden rounded-full bg-slate-800"
+                        >
+                            <span
+                                class="block h-full rounded-full"
+                                class:bg-indigo-500={quotaShare < 90}
+                                class:bg-rose-500={quotaShare >= 90}
+                                style={`width:${Math.max(2, quotaShare)}%`}
+                            ></span>
+                        </div>
+                    </div>
+                {/if}
+                <div class="mt-5 flex flex-wrap gap-3">
+                    <button
+                        type="button"
+                        class="rounded-xl border border-slate-700 bg-slate-800/70 px-5 py-3 text-sm text-slate-100 transition hover:border-indigo-400"
+                        onclick={() => exportHistory("csv")}
+                        >↓ &nbsp;Export history (CSV)</button
+                    >
+                    <button
+                        type="button"
+                        class="rounded-xl border border-slate-700 bg-slate-800/70 px-5 py-3 text-sm text-slate-100 transition hover:border-indigo-400"
+                        onclick={() => exportHistory("json")}
+                        >↓ &nbsp;Export history (JSON)</button
+                    >
+                    <button
+                        type="button"
+                        class="rounded-xl border border-rose-800 bg-rose-950/50 px-5 py-3 text-sm font-semibold text-rose-300 transition hover:bg-rose-900/70 disabled:opacity-50"
+                        disabled={ui.clearingHistory}
+                        onclick={clearHistory}
+                        >{ui.clearingHistory
+                            ? "Clearing…"
+                            : "Clear analysis history"}</button
+                    >
                 </div>
+                {#if ui.historyError}
+                    <p class="mt-3 text-sm text-rose-300" role="alert">
+                        {ui.historyError}
+                    </p>
+                {/if}
+                {#if cleared}
+                    <p class="mt-3 text-sm text-emerald-300" role="status">
+                        Your analysis history has been cleared.
+                    </p>
+                {/if}
             </section>
 
             <section
@@ -254,12 +447,16 @@
                         onsubmit={deleteProfile}
                     >
                         <label class="min-w-0 flex-1 text-xs text-slate-400"
-                            >Confirm with your password
+                            >{hasPassword
+                                ? "Confirm with your password"
+                                : "Type your account email to confirm"}
                             <input
                                 class="mt-2 block w-full rounded-xl border border-rose-900/70 bg-[#0a0c13] px-4 py-3 text-sm text-slate-100 outline-none focus:border-rose-500"
-                                type="password"
+                                type={hasPassword ? "password" : "email"}
                                 bind:value={profile.password}
-                                autocomplete="current-password"
+                                autocomplete={hasPassword
+                                    ? "current-password"
+                                    : "off"}
                                 required
                             />
                         </label>

@@ -23,7 +23,7 @@ class CleanupCommand extends Command
             ->get();
 
         foreach ($stale as $a) {
-            foreach ([$a->file_path, $a->preview_path, $a->thumb_path] as $p) {
+            foreach ([$a->file_path, $a->preview_path, $a->thumb_path, $a->heatmap_path] as $p) {
                 $vault->delete($p);
             }
             $a->delete();

@@ -53,7 +53,7 @@ class HistoryController extends Controller
             $paths = [];
             DB::transaction(function () use ($user, &$paths) {
                 foreach (Analysis::where('user_id', $user->getAuthIdentifier())->lockForUpdate()->get() as $a) {
-                    array_push($paths, $a->file_path, $a->preview_path, $a->thumb_path);
+                    array_push($paths, $a->file_path, $a->preview_path, $a->thumb_path, $a->heatmap_path);
                     $a->delete();
                 }
             });

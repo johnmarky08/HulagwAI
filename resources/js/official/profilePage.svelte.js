@@ -9,6 +9,7 @@ export const profile = $state({
     loading: true,
     saving: false,
     saved: false,
+    passwordChanged: false,
     changingPassword: false,
     passwordFormOpen: false,
     currentPassword: "",
@@ -50,6 +51,7 @@ export async function saveProfile(event) {
     event.preventDefault();
     profile.saving = true;
     profile.saved = false;
+    profile.passwordChanged = false;
     profile.error = "";
     try {
         const result = await auth.updateProfile(profile.name, profile.email);
@@ -68,6 +70,8 @@ export async function saveProfile(event) {
 export async function changeProfilePassword(event) {
     event.preventDefault();
     profile.changingPassword = true;
+    profile.passwordChanged = false;
+    profile.saved = false;
     profile.error = "";
     try {
         await auth.changePassword(
@@ -79,6 +83,8 @@ export async function changeProfilePassword(event) {
         profile.currentPassword = "";
         profile.newPassword = "";
         profile.newPasswordConfirmation = "";
+        profile.passwordChanged = true;
+        if (profile.me?.user) profile.me.user.has_password = true;
     } catch (error) {
         profile.error = errorMessage(error);
     } finally {

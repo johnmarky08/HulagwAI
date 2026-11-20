@@ -33,6 +33,11 @@ class PageController extends Controller
         return Inertia::render('Extension');
     }
 
+    public function evaluation(): Response
+    {
+        return Inertia::render('Evaluation');
+    }
+
     public function about(): Response
     {
         return Inertia::render('About');

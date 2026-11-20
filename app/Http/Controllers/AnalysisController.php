@@ -87,7 +87,16 @@ class AnalysisController extends Controller
         AnalyzeImageJob::dispatch($uuid);
         AuditLog::record('analysis_created', $request, $user?->getAuthIdentifier(), ['bytes' => $img['size'], 'format' => $img['format']]);
 
-        return response()->json($this->presenter->status(Records::fromModel(Analysis::where('uuid', $uuid)->firstOrFail(), false)), 202);
+        // With a synchronous queue (QUEUE_CONNECTION=sync) the job has already finished here: return the full result
+        // so clients that stop polling on "done" still get it. With a real queue this is the usual 202 "queued" payload.
+        $rec = $this->access->record($request, $uuid);
+        if ($rec === null) {
+            return $this->error('not_found', 'Analysis not found.', 404);
+        }
+
+        return $rec['status'] === 'done'
+            ? response()->json($this->presenter->full($rec), 200)
+            : response()->json($this->presenter->status($rec), 202);
     }
 
     /** GET /api/v1/analyses/{id}  -> progress while running, full result when done */
@@ -101,10 +110,10 @@ class AnalysisController extends Controller
         return response()->json($rec['status'] === 'done' ? $this->presenter->full($rec) : $this->presenter->status($rec));
     }
 
-    /** GET /api/v1/analyses/{id}/image?variant=preview|thumb */
+    /** GET /api/v1/analyses/{id}/image?variant=preview|thumb|heatmap */
     public function image(Request $request, string $id): Response|JsonResponse
     {
-        $variant = $request->query('variant') === 'thumb' ? 'thumb' : 'preview';
+        $variant = in_array($request->query('variant'), ['thumb', 'heatmap'], true) ? $request->query('variant') : 'preview';
         $rec = $this->access->record($request, $id);
         if (! $rec || $rec['status'] !== 'done') {
             return $this->error('not_found', 'Image not found.', 404);
@@ -148,7 +157,7 @@ class AnalysisController extends Controller
             if (! $locked) {
                 return [];
             }
-            $paths = [$locked->file_path, $locked->preview_path, $locked->thumb_path];
+            $paths = [$locked->file_path, $locked->preview_path, $locked->thumb_path, $locked->heatmap_path];
             $locked->delete(); // a running job sees "no row" and stops; its late output is cleaned by the job
 
             return $paths;
@@ -169,12 +178,14 @@ class AnalysisController extends Controller
     {
         if ($request->user()) {
             $row = Analysis::where('uuid', $rec['id'])->where('user_id', $request->user()->getAuthIdentifier())->first();
-            $path = $variant === 'thumb' ? $row?->thumb_path : $row?->preview_path;
+            $path = match ($variant) { 'thumb' => $row?->thumb_path, 'heatmap' => $row?->heatmap_path, default => $row?->preview_path };
 
             return $path ? $this->vault->get($path, $rec['id'].':'.$variant) : null;
         }
+        // guests: thumbnail and heat map live in the encrypted session only
+        $b64 = $variant === 'heatmap' ? ($rec['heatmap_b64'] ?? null) : ($rec['thumb_b64'] ?? null);
 
-        return isset($rec['thumb_b64']) ? (base64_decode($rec['thumb_b64'], true) ?: null) : null; // guests: thumbnail only
+        return $b64 ? (base64_decode($b64, true) ?: null) : null;
     }
 
     private function duplicate(int|string $userId, string $sha): ?Analysis

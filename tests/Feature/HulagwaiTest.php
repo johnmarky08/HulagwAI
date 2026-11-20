@@ -44,6 +44,12 @@ class HulagwaiTest extends TestCase
                 'components' => ['clip' => ['p' => 0.9, 'weight' => 0.5, 'role' => 'semantic']],
                 'metadata' => ['findings' => []], 'warnings' => [], 'decision' => ['source' => 'model', 'disagreement' => 0.05],
                 'thresholds' => ['real_max' => 0.4, 'ai_min' => 0.6],
+                'attribution' => ['available' => true, 'source' => 'model', 'decision' => 'family', 'tau' => 0.55,
+                    'top' => [['family' => 'midjourney', 'label' => 'Midjourney', 'p' => 0.71], ['family' => 'flux', 'label' => 'FLUX', 'p' => 0.2], ['family' => 'dalle', 'label' => 'DALL·E', 'p' => 0.05]]],
+                'evidence' => ['flags' => [['id' => 'signal_cnn', 'category' => 'Pixel-level texture', 'strength' => 'strong', 'title' => 'Pixel-level texture signal', 'detail' => 'x', 'source' => 'cnn']],
+                    'regions' => [['x' => 0, 'y' => 0, 'w' => 0.5, 'h' => 0.5, 'score' => 0.9, 'where' => 'upper-left']],
+                    'heatmap' => ['available' => true, 'grid' => [2, 2], 'scores' => [[0.9, 0.2], [0.1, 0.3]]], 'note' => 'n'],
+                'heatmap_jpeg_b64' => $b,
                 'preview_jpeg_b64' => $b, 'thumb_jpeg_b64' => $b,
             ]),
             '*/v1/model' => Http::response([
@@ -69,7 +75,7 @@ class HulagwaiTest extends TestCase
 
     public function test_guest_flow_keeps_nothing_in_the_database(): void
     {
-        $r = $this->postJson('/api/v1/analyses', ['image' => $this->png()])->assertStatus(202);
+        $r = $this->postJson('/api/v1/analyses', ['image' => $this->png()])->assertSuccessful();
         $id = $r->json('id');
 
         $show = $this->getJson("/api/v1/analyses/$id")->assertOk();
@@ -89,7 +95,7 @@ class HulagwaiTest extends TestCase
     public function test_signed_in_user_gets_encrypted_persistent_history(): void
     {
         $u = User::factory()->create();
-        $id = $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png('secret_name.png')])->assertStatus(202)->json('id');
+        $id = $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png('secret_name.png')])->assertSuccessful()->json('id');
 
         $row = Analysis::where('uuid', $id)->firstOrFail();
         $this->assertSame('done', $row->status->value);
@@ -97,7 +103,7 @@ class HulagwaiTest extends TestCase
         $raw = \DB::table('analyses')->where('uuid', $id)->first();
         $this->assertStringNotContainsString('secret_name', $raw->original_name, 'filename must be encrypted at rest');
         $this->assertStringNotContainsString('ai_generated', (string) $raw->details);
-        $this->assertCount(3, Storage::disk('local')->allFiles('vault'));
+        $this->assertCount(4, Storage::disk('local')->allFiles('vault'));
         $this->assertStringNotContainsString('PNG', Storage::disk('local')->get($row->file_path), 'blob must not be plaintext');
 
         $this->getJson("/api/v1/analyses/$id")->assertOk()->assertJsonPath('result.label', 'Likely AI-generated');
@@ -139,19 +145,19 @@ class HulagwaiTest extends TestCase
         config(['hulagwai.quota.user_bytes' => 5000]);
         $u = User::factory()->create();
         $this->actingAs($u);
-        $this->postJson('/api/v1/analyses', ['image' => UploadedFile::fake()->image('a.png', 400, 400)->size(1)])->assertStatus(202);
+        $this->postJson('/api/v1/analyses', ['image' => UploadedFile::fake()->image('a.png', 400, 400)->size(1)])->assertSuccessful();
         $size = Analysis::first()->size_bytes;
         config(['hulagwai.quota.user_bytes' => $size + 10]);
         $this->postJson('/api/v1/analyses', ['image' => UploadedFile::fake()->image('b.jpg', 64, 64)])->assertStatus(413)->assertJsonPath('code', 'quota_exceeded');
         $this->assertSame(1, Analysis::count());
-        $this->assertCount(3, Storage::disk('local')->allFiles('vault'), 'rejected upload must not leave a blob behind');
+        $this->assertCount(4, Storage::disk('local')->allFiles('vault'), 'rejected upload must not leave a blob behind');
     }
 
     public function test_duplicate_upload_reuses_result_without_calling_ml(): void
     {
         $u = User::factory()->create();
         $file = $this->png('dup.png');
-        $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $file])->assertStatus(202);
+        $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $file])->assertSuccessful();
         Http::fake(['*' => Http::response([], 500)]);
         $again = new UploadedFile($file->getPathname(), 'dup.png', 'image/png', null, true);
         $this->postJson('/api/v1/analyses', ['image' => $again])->assertOk()->assertJsonPath('duplicate', true);
@@ -191,7 +197,7 @@ class HulagwaiTest extends TestCase
     public function test_csv_export_neutralises_formulas(): void
     {
         $u = User::factory()->create();
-        $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png('=1+1.png')])->assertStatus(202);
+        $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png('=1+1.png')])->assertSuccessful();
         $csv = $this->get('/api/v1/history/export?format=csv')->assertOk()->streamedContent();
         $this->assertStringContainsString("'=1+1.png", $csv);
         $this->assertStringNotContainsString(",=1+1.png", $csv);
@@ -211,7 +217,7 @@ class HulagwaiTest extends TestCase
     public function test_account_deletion_erases_everything(): void
     {
         $u = User::factory()->create(['password' => bcrypt('Str0ngPassw0rd')]);
-        $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png()])->assertStatus(202);
+        $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png()])->assertSuccessful();
         $this->postJson('/api/v1/account/delete', ['password' => 'wrong'])->assertStatus(422);
         $this->postJson('/api/v1/account/delete', ['password' => 'Str0ngPassw0rd'])->assertOk();
         $this->assertSame(0, User::count());
@@ -239,5 +245,118 @@ class HulagwaiTest extends TestCase
         $this->assertSame('hello', $v->get($p, 'A:original'));
         $this->expectException(\RuntimeException::class);
         $v->get($p, 'B:original'); // blob re-bound to another record must fail
+    }
+
+    public function test_evaluation_endpoint_and_notices(): void
+    {
+        $this->getJson('/api/v1/model/evaluation')->assertOk()->assertJsonPath('evaluated', false)->assertJsonPath('notice.intended_use', config('hulagwai.notice.intended_use'));
+
+        $id = $this->postJson('/api/v1/analyses', ['image' => $this->png()])->json('id');
+        $res = $this->getJson("/api/v1/analyses/$id")->assertOk();
+        $this->assertNotEmpty($res->json('notice.limitations'));
+
+        $this->getJson('/api/v1/model/evaluation')->assertOk()
+            ->assertJsonPath('evaluated', true)
+            ->assertJsonPath('metrics.test.confusion.tp', 48)
+            ->assertJsonPath('model.version', '1.0.0');
+        $this->getJson('/api/v1/me')->assertJsonPath('notice.privacy', config('hulagwai.notice.privacy'));
+    }
+
+    public function test_attribution_and_evidence_are_returned_stored_and_served(): void
+    {
+        $u = User::factory()->create();
+        $id = $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png()])->assertSuccessful()->json('id');
+        $r = $this->getJson("/api/v1/analyses/$id")->assertOk();
+        $r->assertJsonPath('result.attribution.available', true)->assertJsonPath('result.attribution.headline', 'Midjourney')
+            ->assertJsonPath('result.attribution.top.0.percent', 71)->assertJsonPath('result.evidence.flags.0.strength', 'strong')
+            ->assertJsonPath('result.evidence.heatmap.available', true);
+        $this->assertNotEmpty($r->json('result.evidence.heatmap.image_url'));
+        $this->assertNotEmpty($r->json('result.attribution.disclaimer'));
+        $raw = \DB::table('analyses')->where('uuid', $id)->first();
+        $this->assertStringNotContainsString('Midjourney', (string) $raw->details, 'attribution must be encrypted at rest');
+        $this->get("/api/v1/analyses/$id/image?variant=heatmap")->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+        $this->assertCount(4, Storage::disk('local')->allFiles('vault'));          // original, preview, thumb, heat map
+        $this->actingAs(User::factory()->create())->get("/api/v1/analyses/$id/image?variant=heatmap")->assertNotFound();
+        $this->actingAs($u)->deleteJson("/api/v1/analyses/$id")->assertOk();
+        $this->assertSame([], Storage::disk('local')->allFiles('vault'));
+    }
+
+    public function test_guest_keeps_heatmap_in_session_only(): void
+    {
+        $id = $this->postJson('/api/v1/analyses', ['image' => $this->png()])->json('id');
+        $this->getJson("/api/v1/analyses/$id")->assertOk()->assertJsonPath('result.attribution.headline', 'Midjourney');
+        $this->assertSame([], Storage::disk('local')->allFiles('vault'));
+        $this->assertSame(0, Analysis::count());
+        $this->get("/api/v1/analyses/$id/image?variant=heatmap")->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+    }
+
+    public function test_hostile_attribution_and_evidence_fields_are_sanitised(): void
+    {
+        $b = $this->jpegB64();
+        $this->refake(['*/v1/analyze' => Http::response([
+            'ai_probability' => 0.9, 'confidence' => 0.9, 'verdict' => 'ai_generated',
+            'model' => ['name' => 'm', 'version' => '1', 'weights_sha256' => str_repeat('a', 64)], 'image' => [],
+            'attribution' => ['available' => true, 'top' => [['family' => '../../etc/passwd', 'label' => 'x', 'p' => 5], ['family' => 'flux', 'label' => "Fl\x00ux\u{202E}", 'p' => 9]]],
+            'evidence' => ['flags' => [['id' => '<b>X</b>', 'strength' => 'EVIL', 'title' => str_repeat('A', 999), 'detail' => 'd', 'category' => 'c', 'source' => 's']],
+                'regions' => [['x' => 7, 'y' => -3, 'w' => 'z', 'h' => 1, 'score' => 99]]],
+            'preview_jpeg_b64' => $b, 'thumb_jpeg_b64' => $b,
+        ])]);
+        $u = User::factory()->create();
+        $id = $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png()])->json('id');
+        $r = $this->getJson("/api/v1/analyses/$id")->assertOk();
+        $this->assertSame('flux', $r->json('result.attribution.top.0.family'));       // path-like family dropped
+        $this->assertSame(100, $r->json('result.attribution.top.0.percent'));          // probability clamped to 1.0
+        $this->assertStringNotContainsString("\x00", (string) $r->json('result.attribution.top.0.label'));
+        $this->assertStringNotContainsString("\u{202E}", (string) $r->json('result.attribution.top.0.label'));
+        $this->assertSame('weak', $r->json('result.evidence.flags.0.strength'));       // unknown enum -> weak
+        $this->assertMatchesRegularExpression('/^[a-z0-9_]*$/', $r->json('result.evidence.flags.0.id'));
+        $this->assertLessThanOrEqual(120, mb_strlen($r->json('result.evidence.flags.0.title')));
+        $this->assertEquals(1.0, $r->json('result.evidence.regions.0.x'));
+        $this->assertEquals(0.0, $r->json('result.evidence.regions.0.y'));
+        $this->assertNull($r->json('result.evidence.heatmap.image_url'));              // no heat map supplied
+    }
+
+    public function test_old_analyses_without_new_fields_still_render(): void
+    {
+        $this->refake(['*/v1/analyze' => Http::response([
+            'ai_probability' => 0.2, 'confidence' => 0.8, 'verdict' => 'real',
+            'model' => ['name' => 'm', 'version' => '1', 'weights_sha256' => str_repeat('a', 64)], 'image' => [],
+            'preview_jpeg_b64' => $this->jpegB64(), 'thumb_jpeg_b64' => $this->jpegB64(),
+        ])]);
+        $id = $this->postJson('/api/v1/analyses', ['image' => $this->png()])->json('id');
+        $this->getJson("/api/v1/analyses/$id")->assertOk()
+            ->assertJsonPath('result.attribution.available', false)->assertJsonPath('result.evidence.flags', []);
+    }
+
+    public function test_report_contains_generator_and_evidence_sections(): void
+    {
+        $u = User::factory()->create();
+        $id = $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png()])->json('id');
+        $rec = \App\Services\Records::fromModel(Analysis::where('uuid', $id)->first());
+        $html = view('reports.analysis', app(\App\Services\ReportBuilder::class)->viewData($rec, ModelVersion::first(), null, null))->render();
+        foreach (['Likely generator', 'Midjourney', '71%', 'Why it may look AI-generated', 'Pixel-level texture signal', 'closed-set estimate', 'Recall / sensitivity'] as $needle) {
+            $this->assertStringContainsString($needle, $html, $needle);
+        }
+        if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            $this->get("/api/v1/analyses/$id/report")->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        }
+    }
+
+    public function test_new_frontend_pages_are_routed(): void
+    {
+        $this->withoutVite();
+        $this->get('/dashboard')->assertOk();
+        $this->get('/profile')->assertRedirect('/login');
+        $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
+    }
+
+    public function test_upload_returns_full_result_when_job_already_ran_and_202_when_queued(): void
+    {
+        $this->postJson('/api/v1/analyses', ['image' => $this->png()])->assertOk()      // sync queue in tests
+            ->assertJsonPath('status', 'done')->assertJsonPath('result.attribution.headline', 'Midjourney');
+
+        \Illuminate\Support\Facades\Queue::fake();
+        $this->actingAs(User::factory()->create())->postJson('/api/v1/analyses', ['image' => $this->png('q.png')])
+            ->assertStatus(202)->assertJsonPath('status', 'queued')->assertJsonMissingPath('result');
     }
 }

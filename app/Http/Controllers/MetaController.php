@@ -19,9 +19,11 @@ class MetaController extends Controller
 
         return response()->json([
             'authenticated' => (bool) $user,
-            'user' => $user ? ['id' => $user->id, 'name' => $user->name, 'email' => $user->email] : null,
+            'user' => $user?->toAccountArray(),
+            'auth' => ['google' => GoogleAuthController::enabled()],
             'history_mode' => $user ? 'account' : 'session',
             'quota' => $user ? ['used_bytes' => $used, 'limit_bytes' => $limit, 'remaining_bytes' => max(0, $limit - $used)] : null,
+            'notice' => ['privacy' => config('hulagwai.notice.privacy')],
             'upload' => [
                 'max_bytes' => config('hulagwai.upload.max_bytes'),
                 'extensions' => array_keys(config('hulagwai.upload.extensions')),
@@ -38,6 +40,28 @@ class MetaController extends Controller
         return response()->json([
             'name' => $m?->name, 'version' => $m?->version, 'evaluated_at' => $m?->evaluated_at?->toIso8601String(),
             'summary' => $t ? array_intersect_key($t, array_flip(['n', 'accuracy', 'precision', 'recall', 'f1', 'roc_auc'])) : null,
+        ]);
+    }
+
+    /**
+     * GET /api/v1/model/evaluation -> everything the UI needs to show how good the model is:
+     * metrics, confusion matrix, ROC/calibration points, model comparison, CV, robustness, errors + notices.
+     */
+    public function evaluation(): JsonResponse
+    {
+        $m = ModelVersion::whereNotNull('metrics')->orderByDesc('id')->first();
+        $notice = config('hulagwai.notice');
+
+        if (! $m) {
+            return response()->json(['evaluated' => false, 'message' => 'The model has not been evaluated yet (train it and install metrics.json).', 'notice' => $notice]);
+        }
+
+        return response()->json([
+            'evaluated' => true,
+            'model' => ['name' => $m->name, 'version' => $m->version, 'weights_sha256' => $m->weights_sha256, 'evaluated_at' => $m->evaluated_at?->toIso8601String()],
+            'thresholds' => $m->thresholds,
+            'metrics' => $m->metrics,
+            'notice' => $notice,
         ]);
     }
 

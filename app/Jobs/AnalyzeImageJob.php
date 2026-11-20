@@ -63,6 +63,9 @@ class AnalyzeImageJob implements ShouldQueue
                 'preview' => $vault->put($res['preview'], $a->uuid.':preview'),
                 'thumb' => $vault->put($res['thumb'], $a->uuid.':thumb'),
             ];
+            if ($res['heatmap'] !== null) {
+                $newFiles['heatmap'] = $vault->put($res['heatmap'], $a->uuid.':heatmap');
+            }
 
             $saved = DB::transaction(function () use ($res, $mv, $newFiles, $vault) {
                 $row = Analysis::where('uuid', $this->uuid)->lockForUpdate()->first();
@@ -81,6 +84,7 @@ class AnalyzeImageJob implements ShouldQueue
                     'model_version_id' => $mv->id,
                     'preview_path' => $newFiles['preview'],
                     'thumb_path' => $newFiles['thumb'],
+                    'heatmap_path' => $newFiles['heatmap'] ?? null,
                     'details' => $res['details'],
                     'analyzed_at' => now(),
                     'file_path' => $guest ? null : $originalPath, // guests: original is not kept

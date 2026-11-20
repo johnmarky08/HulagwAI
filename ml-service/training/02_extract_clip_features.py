@@ -7,7 +7,7 @@ import random
 import numpy as np
 
 from app import preprocess as P
-from training.augment import degrade
+from training.augment import degrade, random_native_crop
 from training.common import done, load_manifest, log, open_rgb, parse
 
 
@@ -22,9 +22,12 @@ class DS:
         img = open_rgb(self.paths[i])
         if img is None:
             return torch.zeros(3, P.CROP, P.CROP), False
-        if self.degraded:
-            img = degrade(img, random.Random(self.seed + i))
-        arr = P.crops_to_array(P.native_crops(img, P.CROP, 1), P.CLIP_MEAN, P.CLIP_STD)[0]
+        if self.degraded:                      # degraded view: random native crop (not always the centre) + JPEG/blur/resize
+            r = random.Random(self.seed + i)
+            crop = random_native_crop(degrade(img, r), r)
+        else:
+            crop = P.native_crops(img, P.CROP, 1)[0]
+        arr = P.crops_to_array([crop], P.CLIP_MEAN, P.CLIP_STD)[0]
         return torch.from_numpy(arr), True
 
 

@@ -34,6 +34,7 @@ final class Records
             'error_code' => $a->error_code,
             'model_version_id' => $a->model_version_id,
             'details' => $withDetails ? ($a->details ?? []) : null,
+            'has_heatmap' => (bool) $a->heatmap_path,
             'persisted' => $a->user_id !== null,
         ];
     }

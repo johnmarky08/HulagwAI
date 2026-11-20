@@ -8,11 +8,12 @@ from typing import Any
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+from app import attribution as A
 from app import preprocess as P
 from app.config import Settings
 from app.detectors import fusion
 from app.detectors.bundle import Bundle
-from app.forensics import metadata
+from app.forensics import evidence, metadata
 
 Image.MAX_IMAGE_PIXELS = 40_000_000  # hard decompression-bomb limit inside Pillow itself
 ALLOWED = {"JPEG", "PNG", "WEBP"}
@@ -69,6 +70,25 @@ def _warnings(img: Image.Image) -> list[str]:
     return out
 
 
+def _attribute(bundle: Bundle | None, feats: dict[str, Any], meta: dict[str, Any], d: dict[str, Any]) -> dict[str, Any]:
+    """Which family made it?  Metadata that NAMES the generator wins; otherwise the trained head, with abstention."""
+    if d["p"] < 0.5:
+        return {"available": False, "reason": "not_ai_generated"}
+    for f in meta.get("findings", []):
+        g = f.get("generator")
+        if f.get("severity") == "strong_ai" and g:
+            fam = A.family_of(g)
+            if fam:
+                return {"available": True, "source": "metadata", "decision": "family", "note": f"Named in the file itself: {g}",
+                        "top": [{"family": fam, "label": A.FAMILIES[fam], "p": 0.99}]}
+    if bundle is None or bundle.attribution is None:
+        return {"available": False, "reason": "attribution_model_not_installed"}
+    out = bundle.attribution.predict(feats)
+    if out.get("available") and d["verdict"] == "inconclusive":
+        out["note"] = "Tentative: the real/AI verdict itself is inconclusive."
+    return out
+
+
 def analyze(raw: bytes, s: Settings, bundle: Bundle | None) -> dict[str, Any]:
     t0 = time.perf_counter()
     if bundle is None and not s.allow_metadata_only:
@@ -82,8 +102,9 @@ def analyze(raw: bytes, s: Settings, bundle: Bundle | None) -> dict[str, Any]:
     t_meta = time.perf_counter()
 
     components: dict[str, Any] = {}
+    feats: dict[str, Any] = {}
     if bundle is not None:
-        logits = bundle.logits(rgb)
+        logits, feats = bundle.analyze(rgb)
         f = fusion.fuse(logits, bundle.fusion_cfg)
         for name, w in zip(bundle.fusion_cfg["members"], bundle.fusion_cfg["weights"]):
             components[name] = {"p": round(f["member_p"][name], 5), "logit": round(logits[name], 4),
@@ -100,6 +121,16 @@ def analyze(raw: bytes, s: Settings, bundle: Bundle | None) -> dict[str, Any]:
     if meta["strong_ai"]:
         warnings.append("provenance_declares_ai")
 
+    attribution = _attribute(bundle, feats, meta, d)
+    pm, heat_b64 = None, None
+    cnn = bundle.cnn_member() if bundle is not None else None
+    if cnn is not None and d["p"] >= 0.4:                 # a heat map only makes sense when AI is plausible
+        pm = evidence.patch_map(rgb, cnn)
+        if pm is not None:
+            heat_b64 = evidence.overlay_jpeg_b64(rgb, pm)
+    ev = evidence.build(components, meta, warnings, disagreement, pm, d["p"])
+    t_end = time.perf_counter()
+
     return {
         "model": model,
         "ai_probability": round(d["p"], 5),
@@ -110,9 +141,12 @@ def analyze(raw: bytes, s: Settings, bundle: Bundle | None) -> dict[str, Any]:
         "warnings": warnings,
         "decision": {"source": d["source"], "disagreement": round(disagreement, 5), "widened_by": d["widened_by"], "bands": d["bands"]},
         "thresholds": {"real_max": d["bands"]["real_max"], "ai_min": d["bands"]["ai_min"]},
+        "attribution": attribution,
+        "evidence": ev,
+        "heatmap_jpeg_b64": heat_b64,
         "image": {"width": original_size[0], "height": original_size[1], "format": img.format, "mode": img.mode},
         "preview_jpeg_b64": _jpeg_b64(img, 1024, 85),
         "thumb_jpeg_b64": _jpeg_b64(img, 480, 80),
         "timings_ms": {"metadata": round((t_meta - t0) * 1000), "model": round((t_model - t_meta) * 1000),
-                       "total": round((time.perf_counter() - t0) * 1000)},
+                       "evidence": round((t_end - t_model) * 1000), "total": round((time.perf_counter() - t0) * 1000)},
     }

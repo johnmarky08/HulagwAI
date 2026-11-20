@@ -58,7 +58,7 @@ class ExtensionAuthController extends Controller
         $expiresAt = now()->addDays(self::TOKEN_TTL_DAYS);
         ExtensionToken::create([
             'user_id' => $user->getAuthIdentifier(),
-            'name' => 'HulagwAI Facebook scanner',
+            'name' => 'HulagwAI image scanner',
             'token_hash' => hash('sha256', $plainText),
             'expires_at' => $expiresAt,
         ]);

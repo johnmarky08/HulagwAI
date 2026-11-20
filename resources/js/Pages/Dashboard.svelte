@@ -6,14 +6,23 @@
     import {
         ui,
         sampleImage,
-        loadHistory,
+        loadRecent,
         formatDate,
     } from "../official/controller.svelte.js";
     import { openQuickDetection } from "../official/dashboard.js";
+    import { session } from "../api/session.svelte.js";
 
     onMount(() => {
-        void loadHistory();
+        void loadRecent();
     });
+
+    const mb = (bytes) => (bytes / 1048576).toFixed(1);
+    const quota = $derived(session.value?.quota ?? null);
+    const quotaShare = $derived(
+        quota?.limit_bytes
+            ? Math.min(100, Math.round((quota.used_bytes / quota.limit_bytes) * 100))
+            : 0,
+    );
 
     const tones = {
         indigo: {
@@ -161,12 +170,12 @@
                 </div>
             </section>
 
-            {#if ui.historyError}
+            {#if ui.recentError}
                 <p
                     class="mb-5 rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-sm text-rose-300"
                     role="alert"
                 >
-                    Could not load your analysis summary: {ui.historyError}
+                    Could not load your analysis summary: {ui.recentError}
                 </p>
             {/if}
 
@@ -242,7 +251,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {#if ui.loadingHistory && !ui.rows.length}
+                                {#if ui.loadingRecent && !ui.recentRows.length}
                                     <tr
                                         ><td
                                             colspan="4"
@@ -250,7 +259,7 @@
                                             >Loading your history…</td
                                         ></tr
                                     >
-                                {:else if !ui.rows.length}
+                                {:else if !ui.recentRows.length}
                                     <tr>
                                         <td
                                             colspan="4"
@@ -265,13 +274,17 @@
                                         </td>
                                     </tr>
                                 {:else}
-                                    {#each ui.rows.slice(0, 5) as row (row.id)}
+                                    {#each ui.recentRows.slice(0, 5) as row (row.id)}
                                         <tr
                                             class="border-b border-slate-800/80 transition hover:bg-indigo-950/40"
                                         >
                                             <td class="p-3">
-                                                <div
-                                                    class="flex items-center gap-3"
+                                                <a
+                                                    use:inertia
+                                                    href={"/detect?analysis=" +
+                                                        row.id}
+                                                    class="flex items-center gap-3 hover:text-indigo-300"
+                                                    title={`Open the analysis of ${row.filename}`}
                                                 >
                                                     <img
                                                         class="size-10 rounded-lg object-cover ring-1 ring-slate-700"
@@ -283,7 +296,7 @@
                                                         class="max-w-180px truncate font-medium"
                                                         >{row.filename}</span
                                                     >
-                                                </div>
+                                                </a>
                                             </td>
                                             <td class="p-3">
                                                 <span
@@ -399,6 +412,38 @@
                             </p>
                         {/if}
                     </section>
+                    {#if quota}
+                        <section
+                            class="rounded-2xl border border-indigo-500/40 bg-slate-900/70 p-5 sm:p-6"
+                            aria-label="Storage used"
+                        >
+                            <div class="flex items-baseline justify-between gap-3">
+                                <h2 class="text-lg font-bold">Storage</h2>
+                                <span class="text-xs tabular-nums text-slate-400"
+                                    >{mb(quota.used_bytes)} / {mb(
+                                        quota.limit_bytes,
+                                    )} MB</span
+                                >
+                            </div>
+                            <div
+                                class="mt-3 h-2 overflow-hidden rounded-full bg-slate-800"
+                            >
+                                <span
+                                    class="block h-full rounded-full"
+                                    class:bg-indigo-500={quotaShare < 90}
+                                    class:bg-rose-500={quotaShare >= 90}
+                                    style={`width:${Math.max(2, quotaShare)}%`}
+                                ></span>
+                            </div>
+                            <p class="mt-2 text-xs text-slate-400">
+                                {mb(quota.remaining_bytes)} MB left for stored images.
+                                Delete analyses from
+                                <a use:inertia class="text-indigo-300 underline" href="/history"
+                                    >History</a
+                                > to free space.
+                            </p>
+                        </section>
+                    {/if}
                     <div
                         class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
                     >

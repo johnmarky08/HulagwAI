@@ -29,18 +29,20 @@ class AccountController extends Controller
         $user->fill($data)->save();
         AuditLog::record('profile_updated', $request, $user->id);
 
-        return response()->json(['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email]]);
+        return response()->json(['user' => $user->toAccountArray()]);
     }
 
     /** PUT /api/v1/account/password {current_password, password, password_confirmation} */
     public function updatePassword(Request $request): JsonResponse
     {
+        $user = $request->user();
+        // Accounts created with Google have no password yet: they may set one without a current password.
+        $hasPassword = $user->password !== null;
         $request->validate([
-            'current_password' => ['required', 'string', 'max:128'],
+            'current_password' => [$hasPassword ? 'required' : 'nullable', 'string', 'max:128'],
             'password' => ['required', 'string', 'max:128', 'confirmed', Password::defaults()],
         ]);
-        $user = $request->user();
-        if (! Hash::check($request->input('current_password'), $user->password)) {
+        if ($hasPassword && ! Hash::check((string) $request->input('current_password'), $user->password)) {
             throw ValidationException::withMessages(['current_password' => ['Current password is incorrect.']]);
         }
         $user->password = $request->input('password');
@@ -53,10 +55,15 @@ class AccountController extends Controller
     /** POST /api/v1/account/delete  {password}  -> erases the account and every stored image */
     public function destroy(Request $request, FileVault $vault): JsonResponse|RedirectResponse
     {
-        $request->validate(['password' => ['required', 'string', 'max:128']]);
+        $request->validate(['password' => ['required', 'string', 'max:190']]);
         $user = $request->user();
 
-        if (! Hash::check($request->input('password'), $user->password)) {
+        if ($user->password === null) {
+            // Google-only account: confirm by typing the account email instead of a password.
+            if (mb_strtolower(trim((string) $request->input('password'))) !== mb_strtolower($user->email)) {
+                throw ValidationException::withMessages(['password' => ['Type your account email exactly to confirm.']]);
+            }
+        } elseif (! Hash::check($request->input('password'), $user->password)) {
             throw ValidationException::withMessages(['password' => ['Password is incorrect.']]);
         }
 
@@ -66,7 +73,7 @@ class AccountController extends Controller
         $paths = [];
         DB::transaction(function () use ($user, &$paths) {
             foreach (Analysis::where('user_id', $user->id)->get() as $a) {
-                array_push($paths, $a->file_path, $a->preview_path, $a->thumb_path);
+                array_push($paths, $a->file_path, $a->preview_path, $a->thumb_path, $a->heatmap_path);
             }
             $user->delete(); // analyses cascade
         });

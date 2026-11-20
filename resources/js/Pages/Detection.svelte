@@ -10,7 +10,49 @@
         handleFileDrop,
         allowDrop,
         clearError,
+        toggleHeatmap,
     } from "../official/controller.svelte.js";
+    import GeneratorCard from "./Components/Results/GeneratorCard.svelte";
+    import EvidenceCard from "./Components/Results/EvidenceCard.svelte";
+    import DetailsCard from "./Components/Results/DetailsCard.svelte";
+    import { onMount } from "svelte";
+    import { model } from "../api/model";
+    import { session } from "../api/session.svelte.js";
+
+    // Warn before uploading when the analysis service or model is offline (GET /api/v1/health).
+    let service = $state(null);
+    onMount(async () => {
+        try {
+            service = (await model.health()).ml;
+        } catch {
+            service = null;
+        }
+    });
+    const serviceWarning = $derived(
+        !service
+            ? ""
+            : service.status === "unreachable" || service.status === "error"
+              ? "The analysis service is currently unavailable, so new analyses may fail. Please try again shortly."
+              : service.model_loaded === false
+                ? "The detection model is not installed on this server yet. Results will rely on file metadata only."
+                : "",
+    );
+
+    const verdictTone = {
+        ai: {
+            pill: "border-rose-700 bg-rose-950/50 text-rose-300",
+            bar: "bg-rose-500",
+        },
+        real: {
+            pill: "border-emerald-700 bg-emerald-950 text-emerald-300",
+            bar: "bg-emerald-500",
+        },
+        inconclusive: {
+            pill: "border-amber-700 bg-amber-950/30 text-amber-300",
+            bar: "bg-amber-500",
+        },
+    };
+    const tone = $derived(verdictTone[ui.verdictClass] ?? verdictTone.ai);
 </script>
 
 <svelte:head><title>HulagwAI · Image Detection</title></svelte:head>
@@ -72,6 +114,15 @@
                     ></span>{/if}
             {/each}
         </div>
+
+        {#if serviceWarning && ui.phase === "upload"}
+            <p
+                class="mb-6 rounded-xl border border-amber-700 bg-amber-950/30 p-4 text-sm text-amber-300"
+                role="status"
+            >
+                ⚠ &nbsp;{serviceWarning}
+            </p>
+        {/if}
 
         {#if ui.error}
             <section
@@ -139,6 +190,14 @@
                     ></span
                 >
             </label>
+            {#if session.value?.notice?.privacy}
+                <p
+                    class="mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-slate-400"
+                >
+                    <b class="text-slate-300">Privacy.</b>
+                    {session.value.notice.privacy}
+                </p>
+            {/if}
         {:else if ui.phase === "upload" && ui.file}
             <section
                 class="upload-selected scroll-reveal rounded-2xl border border-indigo-500 bg-indigo-950/40 p-4 shadow-xl shadow-indigo-950/40 sm:p-6"
@@ -158,7 +217,7 @@
                         ).toFixed(2)} MB</span
                     ><span
                         class="rounded bg-emerald-100 px-4 py-1 text-emerald-700"
-                        >Uploaded</span
+                        >Ready to analyze</span
                     >
                 </div>
                 <div class="flex flex-wrap gap-3">
@@ -189,13 +248,24 @@
                         class:scan-frame-dark={!ui.light}
                         class:scan-frame-light={ui.light}
                     >
-                        <img
-                            class="scan-image block h-auto w-full rounded-xl object-contain sm:w-auto sm:max-w-full"
-                            class:scan-image-dark={!ui.light}
-                            class:scan-image-light={ui.light}
-                            src={ui.preview || ui.resultPreview}
-                            alt="Authenticity scan in progress"
-                        />
+                        {#if ui.preview || ui.resultPreview}
+                            <img
+                                class="scan-image block h-auto w-full rounded-xl object-contain sm:w-auto sm:max-w-full"
+                                class:scan-image-dark={!ui.light}
+                                class:scan-image-light={ui.light}
+                                src={ui.preview || ui.resultPreview}
+                                alt="Authenticity scan in progress"
+                            />
+                        {:else}
+                            <div
+                                class="scan-placeholder grid w-full place-items-center rounded-xl bg-slate-950 text-5xl text-indigo-400 sm:w-96"
+                                aria-label={ui.loadingResult
+                                    ? "Loading the saved analysis"
+                                    : "Image preview unavailable"}
+                            >
+                                ▧
+                            </div>
+                        {/if}
                         <div
                             class="scan-image-tint pointer-events-none absolute inset-0"
                             class:scan-tint-dark={!ui.light}
@@ -283,11 +353,21 @@
                 <article
                     class="rounded-2xl border border-indigo-500/40 bg-slate-950 p-3"
                 >
-                    <img
-                        class="result-image mx-auto block h-auto w-full rounded-xl object-contain sm:w-auto sm:max-w-full"
-                        src={ui.resultPreview || ui.preview}
-                        alt="Analysis result"
-                    />
+                    <div class="relative">
+                        <img
+                            class="result-image mx-auto block h-auto w-full rounded-xl object-contain sm:w-auto sm:max-w-full"
+                            src={ui.showHeatmap && ui.heatmapUrl
+                                ? ui.heatmapUrl
+                                : ui.resultPreview || ui.preview}
+                            alt={ui.showHeatmap
+                                ? "Detector heat map over the analysed image"
+                                : "Analysis result"}
+                        />
+                        {#if ui.showHeatmap}<span
+                                class="absolute left-3 top-3 rounded-full bg-slate-950/70 px-3 py-1 text-xs text-slate-100"
+                                >Heat map</span
+                            >{/if}
+                    </div>
                     <dl class="grid grid-cols-2 gap-4 px-5 py-6 text-sm">
                         <dt class="text-slate-400">File analyzed</dt>
                         <dd>{ui.displayTitle}</dd>
@@ -295,6 +375,10 @@
                         <dd>{ui.displayFormat}</dd>
                         <dt class="text-slate-400">File size</dt>
                         <dd>{ui.displaySize} MB</dd>
+                        {#if ui.dimensions}
+                            <dt class="text-slate-400">Dimensions</dt>
+                            <dd>{ui.dimensions}</dd>
+                        {/if}
                         <dt class="text-slate-400">Analyzed on</dt>
                         <dd>{ui.analyzedDate}</dd>
                     </dl>
@@ -305,18 +389,19 @@
                     <span class="text-xs font-bold text-emerald-400"
                         >✓ ANALYSIS COMPLETE</span
                     ><span
-                        class="mt-4 rounded-full border border-rose-700 bg-rose-950/50 px-6 py-2 text-sm text-rose-300"
+                        class={`mt-4 rounded-full border px-6 py-2 text-sm ${tone.pill}`}
                         >{ui.verdictLabel}</span
                     ><strong class="mt-5 text-6xl font-extrabold"
                         >{ui.aiPercent}%</strong
                     ><span class="mt-1 text-sm text-slate-400"
-                        >Estimated AI likelihood</span
+                        >Estimated AI likelihood · {ui.confidencePercent}%
+                        confidence</span
                     >
                     <div
                         class="my-6 h-2 w-full overflow-hidden rounded-full bg-slate-800"
                     >
                         <span
-                            class="block h-full rounded-full bg-rose-500"
+                            class={`block h-full rounded-full ${tone.bar}`}
                             style={`width:${ui.aiPercent}%`}
                         ></span>
                     </div>
@@ -334,6 +419,15 @@
                         <b>How to read this score.</b>
                         {ui.howToRead}
                     </aside>
+                    {#if ui.duplicate}
+                        <p
+                            class="mt-5 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-left text-xs text-slate-300"
+                            role="status"
+                        >
+                            You analyzed this exact image before, so the saved
+                            result is shown instead of running it again.
+                        </p>
+                    {/if}
                     <p class="mt-6 self-start text-xs text-slate-400">
                         {ui.persisted
                             ? "Saved to your analysis history"
@@ -343,20 +437,55 @@
                         class="mt-4 flex w-full flex-wrap justify-center gap-3"
                     >
                         <button
-                            class=": text-white rounded-xl border border-indigo-500 bg-indigo-800 px-4 py-3 text-sm font-semibold"
+                            type="button"
+                            class="rounded-xl border border-indigo-500 bg-indigo-800 px-4 py-3 text-sm font-semibold text-white"
                             onclick={removeFile}
                             >↑ &nbsp; Analyze another</button
                         ><a
                             use:inertia
                             class="rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
                             href="/history">View history</a
-                        ><a
-                            class="rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
-                            href={ui.reportUrl}>Download report</a
-                        >
+                        >{#if ui.reportUrl}<a
+                                class="rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
+                                href={ui.reportUrl}
+                                download>↓ &nbsp;Download report (PDF)</a
+                            >{/if}
                     </div>
                 </article>
             </section>
+            {#if ui.result}
+                <section
+                    class="mt-6 grid items-start gap-6 lg:grid-cols-2"
+                    aria-label="Generator and evidence"
+                >
+                    <GeneratorCard
+                        attribution={ui.attribution}
+                        verdict={ui.result?.verdict}
+                    />
+                    <EvidenceCard
+                        evidence={ui.evidence}
+                        heatmapUrl={ui.heatmapUrl}
+                        showHeatmap={ui.showHeatmap}
+                        onToggleHeatmap={toggleHeatmap}
+                    />
+                </section>
+                <section class="mt-6" aria-label="How the decision was made">
+                    <DetailsCard
+                        components={ui.components}
+                        findings={ui.findings}
+                        warnings={ui.warnings}
+                        decisionSource={ui.decisionSource}
+                        confidencePercent={ui.confidencePercent}
+                        notice={ui.notice}
+                    />
+                </section>
+                <p class="mt-4 text-center text-xs text-slate-400">
+                    Curious how accurate this is?
+                    <a use:inertia class="text-indigo-300 underline" href="/evaluation"
+                        >See the model evaluation</a
+                    >.
+                </p>
+            {/if}
         {/if}
     </main>
 </Layout>
@@ -376,6 +505,9 @@
     /* The image sets the size (capped by max-height); the frame and overlays shrink to match it. */
     .scan-image {
         max-height: min(38vh, 300px);
+    }
+    .scan-placeholder {
+        height: min(38vh, 260px);
     }
 
     @media (min-width: 1024px) {

@@ -11,7 +11,7 @@ final class ReportBuilder
     public function __construct(private readonly Presenter $presenter) {}
 
     /** @param array<string,mixed> $rec @return array<string,mixed> */
-    public function viewData(array $rec, ?ModelVersion $model, ?string $imageJpeg): array
+    public function viewData(array $rec, ?ModelVersion $model, ?string $imageJpeg, ?string $heatmapJpeg = null): array
     {
         $full = $this->presenter->full($rec);
 
@@ -22,6 +22,7 @@ final class ReportBuilder
             'model' => $model,
             'metrics' => (array) ($model?->metrics ?? []),
             'image' => $imageJpeg ? 'data:image/jpeg;base64,'.base64_encode($imageJpeg) : null,
+            'heatmap' => $heatmapJpeg ? 'data:image/jpeg;base64,'.base64_encode($heatmapJpeg) : null,
             'generatedAt' => now()->toDayDateTimeString().' '.config('app.timezone'),
         ];
     }

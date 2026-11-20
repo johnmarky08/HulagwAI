@@ -20,10 +20,10 @@ class Analysis extends Model
     protected $fillable = [
         'uuid', 'user_id', 'status', 'stage', 'progress', 'verdict', 'ai_probability', 'confidence',
         'model_version_id', 'sha256', 'original_name', 'mime_type', 'format', 'width', 'height', 'size_bytes',
-        'file_path', 'preview_path', 'thumb_path', 'details', 'error_code', 'analyzed_at',
+        'file_path', 'preview_path', 'thumb_path', 'heatmap_path', 'details', 'error_code', 'analyzed_at',
     ];
 
-    protected $hidden = ['id', 'file_path', 'preview_path', 'thumb_path', 'details', 'original_name'];
+    protected $hidden = ['id', 'file_path', 'preview_path', 'thumb_path', 'heatmap_path', 'details', 'original_name'];
 
     protected function casts(): array
     {

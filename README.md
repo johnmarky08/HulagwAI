@@ -69,7 +69,7 @@ Open http://127.0.0.1:8000.
 > **Python 3.14?** PyTorch publishes 3.14 wheels, but if `pip` cannot find a wheel for another dependency (timm, open_clip, safetensors…), create the venv with Python 3.12 instead.
 > **8 GB RAM:** the default model (`ViT-B-16` + `convnext_tiny`) needs roughly 2 GB while running. Use `--clip-arch ViT-L-14` only on machines with 16 GB+.
 
-Tests: `php artisan test` (backend, 16 tests) · `cd ml-service && pip install -r requirements-dev.txt && pytest` (ML service).
+Tests: `php artisan test` (backend, 18 tests) · `cd ml-service && pip install -r requirements-dev.txt && pytest` (ML service).
 
 ---
 
@@ -109,7 +109,7 @@ Your laptop's GPU (AMD Radeon 610M, integrated) cannot train deep models, so tra
    ```bash
    composer run dev
    ```
-   Open `http://127.0.0.1:8000`. The PDF report and analysis endpoint now use the verified real model instead of metadata-only inference.
+   Open `http://127.0.0.1:8000`. The PDF report and analysis endpoint now use the verified real model instead of metadata-only inference. The **Evaluation** page (`/evaluation`) and the PDF report show real accuracy / precision / recall / F1 / ROC-AUC / MAE / MSE / Brier / log-loss / ECE / confusion matrix / robustness / unseen-generator results.
 
 Prefer the command line directly in Colab? Use:
 
@@ -126,6 +126,21 @@ Details, flags and troubleshooting: [`ml-service/training/README.md`](ml-service
 
 ---
 
+### Files you must generate / create before the app works
+
+| File                                            | How                                                                               |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `.env` (Laravel)                                | copy `.env.example`, then `php artisan key:generate`, set DB + `ML_SERVICE_TOKEN` |
+| `ml-service/.env`                               | copy `ml-service/.env.example`, same `ML_SERVICE_TOKEN`                           |
+| Database tables                                 | `php artisan migrate`                                                             |
+| **Trained model** `ml-service/models/current/*` | train on Colab (section 2) and unzip the bundle — _not_ in git                    |
+| `vendor/`, `node_modules/`                      | `composer install`, `npm install`                                                 |
+
+### Submission (CSST 102)
+
+`python scripts/make_submission.py` builds the clean ZIP (trained model included, no secrets/caches). Requirement-by-requirement checklist: [`docs/REQUIREMENTS_MATRIX.md`](docs/REQUIREMENTS_MATRIX.md) · demo plan: [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) · [`docs/RESPONSIBLE_ML.md`](docs/RESPONSIBLE_ML.md) · [`docs/AI_ASSISTANCE.md`](docs/AI_ASSISTANCE.md).
+The training run also produces `MODEL_CARD.md` (data, splits, leakage check, baseline comparison, metrics, error analysis, limitations) inside the bundle's `provenance/` folder.
+
 ## 3 · How a decision is made
 
 1. **Provenance check** (always): C2PA/JUMBF containers, IPTC `DigitalSourceType = trainedAlgorithmicMedia`, generator names in EXIF/XMP/PNG text chunks, Stable-Diffusion-WebUI `parameters`, ComfyUI graphs… A declared AI origin lifts the score to ≥ 98 %. _Absence of metadata proves nothing, and camera EXIF is reported but never lowers the score (it can be forged)._
@@ -138,6 +153,11 @@ Details, flags and troubleshooting: [`ml-service/training/README.md`](ml-service
 4. **Three-way verdict**: _Real_ ≤ `real_max`, _AI_ ≥ `ai_min`, otherwise **Inconclusive**. Thresholds are fitted so that decided calls reach ≥ 97 % precision on validation. The band widens automatically for tiny images or when the members disagree.
 
 The confidence shown to users is _how strongly the model favours its prediction_ — not the probability the image is authentic. Every result says so.
+
+### Which AI made it, and why it looks AI
+
+- **Likely generator** — for images judged likely AI, a head on the same CLIP + CNN embeddings names the most likely **family** (Stable Diffusion, SDXL/SD3, FLUX, Midjourney, DALL·E, GPT Image, Google Imagen/Gemini, GAN, other) with the top 3 probabilities. It answers _Unknown generator_ below a confidence threshold fitted on validation data. If the file itself names the generator (C2PA, EXIF/XMP, SD-WebUI or ComfyUI data), that name is used instead. Trained on OpenFake + ArtiFact + GenImage (not CIFAKE).
+- **Why it may look AI** — grounded evidence only: which independent detectors fired and how strongly, provenance markers, a **heat map** of where the pixel-level detector scores the image as most AI-like, and what weakens the evidence (small, compressed, upscaled). It does **not** claim specific defects such as extra fingers — no local model can verify those, and invented reasons would mislead users.
 
 ## 4 · Privacy & storage rules
 

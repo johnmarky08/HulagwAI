@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\FileVault;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -12,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(\App\Services\FileVault::class);
+        $this->app->singleton(FileVault::class);
     }
 
     public function boot(): void
@@ -30,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth', fn (Request $r) => Limit::perMinute(20)->by('auth:'.$r->ip()));
         RateLimiter::for('register', fn (Request $r) => Limit::perHour($cfg['register_per_hour'])->by('reg:'.$r->ip()));
+        RateLimiter::for('password-reset', fn (Request $r) => [
+            Limit::perHour(5)->by('pr-ip:'.$r->ip()),
+            Limit::perHour(3)->by('pr-mail:'.sha1(mb_strtolower((string) $r->input('email')))),
+        ]);
         RateLimiter::for('report', fn (Request $r) => Limit::perMinute(10)->by('rep:'.$who($r)));
 
         Password::defaults(function () {

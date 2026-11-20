@@ -9,11 +9,16 @@ Rate limits answer `429` (`Retry-After` header).
 ## Identity
 | Call | Notes |
 |---|---|
-| `GET /me` | `{authenticated, user, history_mode:"account"\|"session", quota:{used_bytes,limit_bytes,remaining_bytes}\|null, upload:{max_bytes,extensions}}` |
+| `GET /me` | `{authenticated, user:{id,name,email,has_password,google_connected}\|null, auth:{google:bool}, history_mode:"account"\|"session", quota:{used_bytes,limit_bytes,remaining_bytes}\|null, notice:{privacy}, upload:{max_bytes,extensions}}` |
 | `POST /register` *(root path, not /api)* | `{name,email,password,password_confirmation}` → `{user}`. Password ≥ 10 chars, upper+lower+digit. |
 | `POST /login` *(root path)* | `{email,password}` → `{user}`. 5 failures / 5 min per email+IP → `429`. |
 | `POST /logout` *(root path)* | |
-| `POST /api/v1/account/delete` | `{password}` → erases the account and all images. |
+| `POST /api/v1/account/delete` | `{password}` → erases the account and all images. Google-only accounts (no password) confirm with their account email in the same field. |
+| `PUT /api/v1/account/profile` · `PUT /api/v1/account/password` | `{name,email}` · `{current_password,password,password_confirmation}` (`current_password` is not needed when the account has no password yet). |
+| `POST /forgot-password` *(root path)* | `{email}` → always `{ok:true,message}` (no account enumeration). Emails a reset link built from `APP_URL`, valid 60 min, single use. 5/h per IP, 3/h per email. |
+| `POST /reset-password` *(root path)* | `{token,email,password,password_confirmation}` → `{ok,message}`; `422` if the link is invalid/expired. Revokes remember-me and browser-extension tokens. |
+| `GET /auth/google/redirect` → `GET /auth/google/callback` *(root path, full-page navigation)* | Google sign-in (OAuth 2.0 code flow + PKCE + state). Signs in, creates an account (no password) or links Google to an existing account with the same **verified** email; when already signed in it links Google to the current account. Failures redirect to `/login?error=google_*`. Needs `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`. |
+| `DELETE /api/v1/account/google` | Unlinks Google; `422 password_required` if the account has no password. |
 
 ## Analyses
 ### `POST /analyses` — multipart field `image`
@@ -44,8 +49,31 @@ When `done`:
 ```
 Unknown or not-yours ids always return `404` (never `403`).
 
-### `GET /analyses/{id}/image?variant=preview|thumb` → `image/jpeg`
-Re-encoded copy (metadata stripped). Guests only get the 480 px `thumb`.
+#### New in `result` (since v1.1): which generator, and why it looks AI
+```json
+"attribution": {
+  "available": true, "source": "model|metadata", "decision": "family|unknown",
+  "headline": "Midjourney",                       // "Unknown generator" when decision = unknown
+  "top": [{"family":"midjourney","label":"Midjourney","p":0.71,"percent":71}, {"family":"flux","label":"FLUX","p":0.2,"percent":20}],
+  "note": "", "disclaimer": "Generator attribution is a closed-set estimate ..."
+},
+"evidence": {
+  "flags": [{"id":"signal_cnn","category":"Pixel-level texture","strength":"strong|moderate|weak",
+             "title":"Pixel-level texture signal","detail":"...","source":"cnn"}],
+  "regions": [{"x":0.0,"y":0.0,"w":0.5,"h":0.5,"score":0.91,"where":"upper-left"}],   // fractions of width/height
+  "heatmap": {"available": true, "grid": [2,2], "scores": [[0.91,0.2],[0.1,0.3]],
+              "image_url": "/api/v1/analyses/{id}/image?variant=heatmap"},          // null when no heat map
+  "note": "These are signals ... not proof of a flaw."
+}
+```
+* `attribution.available = false` comes with a `reason`: `not_ai_generated`, `attribution_model_not_installed`, `not_computed` (older analyses) …
+* `source = "metadata"` means the file itself names the generator (C2PA, EXIF/XMP, SD-WebUI / ComfyUI data) — that wins over the model.
+* Flags with `category = "Limitations"` describe what *weakens* the evidence (small, compressed, upscaled image). Show them separately.
+* Evidence never claims specific visual defects (extra fingers, garbled text) — show `note` next to it.
+* The heat map exists only when AI is plausible (P(AI) ≥ 0.4) and the image fits at least two 224 px patches (≥ 448 px on one side); smaller images get no location information.
+
+### `GET /analyses/{id}/image?variant=preview|thumb|heatmap` → `image/jpeg`
+Re-encoded copy (metadata stripped). Guests only get the 480 px `thumb` and the `heatmap` (both kept in their session).
 ### `GET /analyses/{id}/report` → `application/pdf`
 ### `DELETE /analyses/{id}` — cancels a running analysis or deletes a finished one.
 
@@ -60,14 +88,14 @@ Same shape for guests (session) and users (MySQL).
 ### `GET /history/export?format=csv|json` · `DELETE /history`
 
 ## Browser extension (test prototype)
-The unpacked Facebook scanner uses a short-lived pairing code rather than web-session cookies:
+The browser extension (image scanner) uses a short-lived pairing code rather than web-session cookies:
 
 - `POST /api/v1/extension/pair` (signed-in web session + CSRF) creates a single-use 32-character code valid for 3 minutes. The signed-in pairing page is `/extension/connect`.
 - `POST /api/v1/extension/exchange` (`{"code":"..."}`) consumes the code once and returns a random bearer token, valid for 30 days. Only a SHA-256 hash is stored server-side.
 - `POST /api/v1/extension/analyses` (multipart `image`) and `GET /api/v1/extension/analyses/{id}` require `Authorization: Bearer <token>` and reuse the regular analysis pipeline.
 - `DELETE /api/v1/extension/token` revokes the current extension token.
 
-The exchange, extension upload/poll, and revoke endpoints bypass cookie CSRF validation because they require a one-time code or bearer token. Keep the token private; never put it in logs. The extension only scans manually selected Facebook images after a confirmation click.
+The exchange, extension upload/poll, and revoke endpoints bypass cookie CSRF validation because they require a one-time code or bearer token. Keep the token private; never put it in logs. The extension only scans images the user picks from the right-click menu, after a confirmation click.
 
 ## Misc
 `GET /model` (active model summary for the About page) · `GET /health` (`{app, ml:{status,model_loaded}}`).

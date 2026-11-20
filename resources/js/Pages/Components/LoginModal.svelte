@@ -115,6 +115,13 @@
                     >
                 </span>
             </label>
+            <div class="text-right">
+                <a
+                    use:inertia
+                    class="text-xs text-indigo-300 underline-offset-4 hover:underline"
+                    href="/forgot-password">Forgot password?</a
+                >
+            </div>
             <button
                 class="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
                 disabled={form.busy}

@@ -50,7 +50,7 @@
     <title>HulagwAI · Pair browser extension</title>
 </svelte:head>
 
-<Layout active="profile">
+<Layout active="extension">
     <main class="mx-auto min-h-[calc(100vh-80px)] max-w-3xl px-5 py-10 sm:px-8">
         <section
             class="rounded-2xl border border-indigo-500/40 bg-slate-900/70 p-5 sm:p-8"
@@ -61,13 +61,12 @@
                 One-time browser pairing
             </p>
             <h1 class="mt-3 text-2xl font-extrabold text-white sm:text-3xl">
-                Connect the Facebook scanner
+                Connect the HulagwAI image scanner
             </h1>
             <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-                This short-lived code lets the unpacked browser extension
-                request a revocable HulagwAI token. Scanning and confirmation
-                happen on Facebook; this page is only for secure account
-                pairing.
+                This short-lived code lets the browser extension request a
+                revocable HulagwAI token. Scanning and confirmation happen in
+                the extension; this page is only for secure account pairing.
             </p>
 
             <div
@@ -117,8 +116,8 @@
                 <li
                     class="rounded-xl border border-slate-800 bg-slate-950/60 p-4"
                 >
-                    <b class="text-indigo-300">2.</b> Open the extension popup on
-                    Facebook and paste it.
+                    <b class="text-indigo-300">2.</b> Open the HulagwAI extension
+                    popup and paste it.
                 </li>
                 <li
                     class="rounded-xl border border-slate-800 bg-slate-950/60 p-4"

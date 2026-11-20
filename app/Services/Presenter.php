@@ -51,11 +51,48 @@ final class Presenter
                 'warnings' => array_values((array) ($details['warnings'] ?? [])),
                 'decision_source' => $details['decision']['source'] ?? 'model',
                 'findings' => array_values((array) ($details['metadata']['findings'] ?? [])),
+                'attribution' => $this->attribution($details['attribution'] ?? null),
+                'evidence' => $this->evidence($details['evidence'] ?? null, (bool) ($r['has_heatmap'] ?? false), (string) $r['id']),
                 'components' => (array) ($details['components'] ?? []),
             ],
+            'notice' => ['intended_use' => config('hulagwai.notice.intended_use'), 'limitations' => config('hulagwai.notice.limitations')],
             'analyzed_at' => $r['analyzed_at'],
             'saved_to_history' => true, // signed-in: MySQL; guest: encrypted session
             'persisted' => (bool) $r['persisted'],
+        ];
+    }
+
+    /** @param mixed $a @return array<string,mixed> */
+    private function attribution(mixed $a): array
+    {
+        if (! is_array($a) || empty($a['available'])) {
+            return ['available' => false, 'reason' => is_array($a) ? ($a['reason'] ?? 'not_computed') : 'not_computed',
+                'disclaimer' => config('hulagwai.notice.attribution')];
+        }
+        $top = array_map(fn ($t) => [...$t, 'percent' => (int) round($t['p'] * 100)], (array) $a['top']);
+        $unknown = ($a['decision'] ?? 'family') === 'unknown';
+
+        return [
+            'available' => true,
+            'source' => $a['source'] ?? 'model',
+            'decision' => $a['decision'] ?? 'family',
+            'headline' => $unknown ? 'Unknown generator' : $top[0]['label'],
+            'top' => $top,
+            'note' => ($a['note'] ?? '') ?: ($unknown ? 'The model is not confident enough to name a generator; the closest matches are listed.' : ''),
+            'disclaimer' => config('hulagwai.notice.attribution'),
+        ];
+    }
+
+    /** @param mixed $e @return array<string,mixed> */
+    private function evidence(mixed $e, bool $hasHeatmap, string $id): array
+    {
+        $e = is_array($e) ? $e : [];
+
+        return [
+            'flags' => array_values((array) ($e['flags'] ?? [])),
+            'regions' => array_values((array) ($e['regions'] ?? [])),
+            'heatmap' => [...(array) ($e['heatmap'] ?? ['available' => false]), 'image_url' => $hasHeatmap ? "/api/v1/analyses/{$id}/image?variant=heatmap" : null],
+            'note' => ($e['note'] ?? '') ?: config('hulagwai.notice.evidence'),
         ];
     }
 

@@ -23,7 +23,7 @@
                     Create a free account to keep your results in one place.
                 </p>
                 <div class="mt-6">
-                    <GoogleSignInButton />
+                    <GoogleSignInButton label="Sign up with Google" />
                 </div>
                 <div
                     class="my-6 flex items-center gap-3 text-xs text-slate-500"

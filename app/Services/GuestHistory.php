@@ -70,13 +70,16 @@ final class GuestHistory
     {
         $rec = Records::fromModel($row);
         $rec['thumb_b64'] = $row->thumb_path ? base64_encode($this->vault->get($row->thumb_path, $row->uuid.':thumb')) : null;
+        $heat = $row->heatmap_path ? $this->vault->get($row->heatmap_path, $row->uuid.':heatmap') : null;
+        $rec['heatmap_b64'] = ($heat !== null && strlen($heat) <= 90_000) ? base64_encode($heat) : null; // guests: session only
+        $rec['has_heatmap'] = $rec['heatmap_b64'] !== null;
         $rec['persisted'] = false;
 
         $limit = (int) config('hulagwai.guest.history_limit');
         session()->put(self::HISTORY, array_slice([$rec, ...$this->all()], 0, $limit));
         $this->removePending($row->uuid);
 
-        foreach ([$row->file_path, $row->preview_path, $row->thumb_path] as $p) {
+        foreach ([$row->file_path, $row->preview_path, $row->thumb_path, $row->heatmap_path] as $p) {
             $this->vault->delete($p);
         }
         $row->delete();

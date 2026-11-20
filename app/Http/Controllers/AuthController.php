@@ -88,7 +88,7 @@ class AuthController extends Controller
     private function done(Request $request, User $user): JsonResponse|RedirectResponse
     {
         return $request->expectsJson()
-            ? response()->json(['user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email]])
+            ? response()->json(['user' => $user->toAccountArray()])
             : redirect()->intended('/');
     }
 }

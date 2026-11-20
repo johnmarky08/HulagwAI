@@ -1,6 +1,6 @@
 <script>
     import { inertia } from "@inertiajs/svelte";
-    import { navigation } from "../../official/navigation.js";
+    import { navigation, footerLinks } from "../../official/navigation.js";
 </script>
 
 <footer class="theme-footer border-t border-indigo-500/50 bg-[#111521]">
@@ -25,16 +25,10 @@
             class="grid grid-cols-2 gap-3 text-sm text-slate-300"
             aria-label="Footer navigation"
         >
-            {#each navigation as item}
-                {#if item.id === "about"}<a
-                        class="hover:text-indigo-300"
-                        href={item.href}>{item.label}</a
-                    >
-                {:else}<a
-                        use:inertia
-                        class="hover:text-indigo-300"
-                        href={item.href}>{item.label}</a
-                    >{/if}
+            {#each [...navigation, ...footerLinks] as item (item.id)}
+                <a use:inertia class="hover:text-indigo-300" href={item.href}
+                    >{item.label}</a
+                >
             {/each}
             <a use:inertia class="hover:text-indigo-300" href="/#how-it-works"
                 >How It Works</a

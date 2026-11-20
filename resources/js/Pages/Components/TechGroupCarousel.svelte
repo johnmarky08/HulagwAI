@@ -239,6 +239,8 @@
         </h3>
     </div>
 
+    <!-- Focusable carousel region: arrow keys move between slides (WAI-ARIA carousel pattern). -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
     <div
         bind:this={cardEl}
         class="tech-card relative isolate min-h-72 overflow-hidden rounded-2xl border border-indigo-500/50 bg-slate-900 px-12 py-8 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
@@ -256,7 +258,7 @@
         {#key `${activeIndex}-${detailsOpen}`}
             <!-- Loading bar along the card border: it sweeps for one period; downward changes go clockwise, upward counter-clockwise. -->
             <svg
-                class="border-run pointer-events-none absolute inset-0 z-[6] size-full overflow-visible"
+                class="border-run pointer-events-none absolute inset-0 z-6 size-full overflow-visible"
                 class:paused={detailsOpen}
                 class:border-rev={direction === "up"}
                 style:--period="{period}ms"

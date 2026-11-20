@@ -8,19 +8,19 @@ use Illuminate\Console\Command;
 
 class DecryptCommand extends Command
 {
-    protected $signature = 'hulagwai:decrypt {id : analysis id (ULID)} {out : output file path} {--kind=original : original|preview|thumb}';
+    protected $signature = 'hulagwai:decrypt {id : analysis id (ULID)} {out : output file path} {--kind=original : original|preview|thumb|heatmap}';
     protected $description = 'Admin tool: decrypt one stored image blob and write it to a file';
 
     public function handle(FileVault $vault): int
     {
         $kind = $this->option('kind');
-        if (! in_array($kind, ['original', 'preview', 'thumb'], true)) {
-            $this->error('kind must be original, preview or thumb');
+        if (! in_array($kind, ['original', 'preview', 'thumb', 'heatmap'], true)) {
+            $this->error('kind must be original, preview, thumb or heatmap');
 
             return self::INVALID;
         }
         $a = Analysis::where('uuid', strtoupper($this->argument('id')))->first();
-        $path = $a ? match ($kind) { 'original' => $a->file_path, 'preview' => $a->preview_path, 'thumb' => $a->thumb_path } : null;
+        $path = $a ? match ($kind) { 'original' => $a->file_path, 'preview' => $a->preview_path, 'thumb' => $a->thumb_path, 'heatmap' => $a->heatmap_path } : null;
         if (! $a || ! $path) {
             $this->error('Analysis or blob not found (guest originals are never kept).');
 

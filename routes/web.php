@@ -3,10 +3,12 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ExtensionAuthController;
+use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\MetaController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +23,7 @@ Route::get('/detect', [PageController::class, 'detection'])->name('detection');
 Route::get('/history', [PageController::class, 'history'])->name('history');
 Route::get('/extension', [PageController::class, 'extension'])->name('extension');
 Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/evaluation', [PageController::class, 'evaluation'])->name('evaluation');
 Route::get('/profile', [PageController::class, 'profile'])->middleware('auth')->name('profile');
 Route::get('/extension/connect', [PageController::class, 'extensionConnect'])->middleware('auth')->name('extension.connect');
 
@@ -30,6 +33,12 @@ Route::middleware('throttle:auth')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/forgot-password', [PasswordResetController::class, 'showForgot'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendLink'])->middleware('throttle:password-reset')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset')->name('password.update');
+    Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 });
 
 /*
@@ -40,6 +49,7 @@ Route::middleware('throttle:auth')->group(function () {
 Route::prefix('api/v1')->middleware('throttle:api')->group(function () {
     Route::get('/me', [MetaController::class, 'me']);
     Route::get('/model', [MetaController::class, 'model']);
+    Route::get('/model/evaluation', [MetaController::class, 'evaluation']);
     Route::get('/health', [MetaController::class, 'health']);
 
     Route::post('/extension/pair', [ExtensionAuthController::class, 'pair'])->middleware('auth');
@@ -62,4 +72,5 @@ Route::prefix('api/v1')->middleware('throttle:api')->group(function () {
     Route::put('/account/profile', [AccountController::class, 'updateProfile'])->middleware('auth');
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->middleware('auth');
     Route::post('/account/delete', [AccountController::class, 'destroy'])->middleware('auth');
+    Route::delete('/account/google', [GoogleAuthController::class, 'unlink'])->middleware('auth');
 });

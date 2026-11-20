@@ -14,7 +14,8 @@ class SecurityHeaders
         $response = $next($request);
 
         // Anything that is not production may talk to the Vite dev server on ANY local port
-        // (Vite can listen on localhost, 127.0.0.1 or [::1] and may pick 5174, 5175 ... if 5173 is busy).
+        // (Vite may pick 5174, 5175 ... if 5173 is busy). IPv6 literals such as [::1] are not valid CSP sources, so
+        // vite.config.js pins the dev server to 127.0.0.1.
         $dev = ! app()->isProduction();
         $vite = $dev ? ' http://localhost:* http://127.0.0.1:*' : '';
         $ws = $dev ? ' ws://localhost:* ws://127.0.0.1:*' : '';

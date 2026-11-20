@@ -23,17 +23,20 @@ class ReportController extends Controller
         }
 
         $jpeg = null;
+        $heat = null;
         if ($request->user()) {
             $row = Analysis::where('uuid', $rec['id'])->where('user_id', $request->user()->getAuthIdentifier())->first();
             $jpeg = $row?->preview_path ? $vault->get($row->preview_path, $rec['id'].':preview') : null;
+            $heat = $row?->heatmap_path ? $vault->get($row->heatmap_path, $rec['id'].':heatmap') : null;
         } elseif (! empty($rec['thumb_b64'])) {
             $jpeg = base64_decode($rec['thumb_b64'], true) ?: null;
+            $heat = ! empty($rec['heatmap_b64']) ? (base64_decode($rec['heatmap_b64'], true) ?: null) : null;
         }
 
         $model = $rec['model_version_id'] ? ModelVersion::find($rec['model_version_id']) : null;
 
         try {
-            $pdf = $builder->pdf($builder->viewData($rec, $model, $jpeg));
+            $pdf = $builder->pdf($builder->viewData($rec, $model, $jpeg, $heat));
         } catch (\RuntimeException $e) {
             return response()->json(['code' => 'pdf_unavailable', 'message' => 'PDF engine is not installed on the server.'], 501);
         }
