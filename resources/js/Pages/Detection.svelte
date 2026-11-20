@@ -39,7 +39,7 @@
         >
             {#each ["Upload", "Analyze", "Results"] as label, index}
                 <div
-                    class="flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold text-black sm:min-w-40 sm:gap-3 sm:text-base"
+                    class="flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold  sm:min-w-40 sm:gap-3 sm:text-base"
                     class:bg-indigo-800={index ===
                         (ui.phase === "upload"
                             ? 0
@@ -62,7 +62,11 @@
                     <span
                         class="grid size-7 shrink-0 place-items-center rounded-full bg-slate-400 text-slate-900"
                         >{index + 1}</span
-                    >{label}
+                    >
+
+                    <span 
+                        >{label}</span
+                    >
                 </div>
                 {#if index < 2}<span class="h-px w-5 bg-indigo-500 sm:w-14"
                     ></span>{/if}
@@ -339,7 +343,7 @@
                         class="mt-4 flex w-full flex-wrap justify-center gap-3"
                     >
                         <button
-                            class="rounded-xl border border-indigo-500 bg-indigo-800 px-4 py-3 text-sm font-semibold"
+                            class=": text-white rounded-xl border border-indigo-500 bg-indigo-800 px-4 py-3 text-sm font-semibold"
                             onclick={removeFile}
                             >↑ &nbsp; Analyze another</button
                         ><a
