@@ -4,7 +4,9 @@ from __future__ import annotations
 import math
 from typing import Any
 
-DEFAULT_THRESHOLDS = {"real_max": 0.40, "ai_min": 0.60, "disagreement_max": 0.35}
+# "Inconclusive" only for a true 50/50: the AI score rounds to 50 %. Everything else gets a Real / AI call.
+INCONCLUSIVE_BAND = (0.495, 0.505)   # real if p < 0.495, ai_generated if p >= 0.505
+DEFAULT_THRESHOLDS = {"real_max": INCONCLUSIVE_BAND[0], "ai_min": INCONCLUSIVE_BAND[1], "disagreement_max": 0.45}
 
 
 def sigmoid(z: float) -> float:
@@ -22,21 +24,15 @@ def fuse(logits: dict[str, float], fusion_cfg: dict[str, Any]) -> dict[str, Any]
 
 
 def decide(p: float, disagreement: float, thresholds: dict[str, float], min_side: int, strong_provenance: bool) -> dict[str, Any]:
-    t = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
-    lo, hi = t["real_max"], t["ai_min"]
+    # Trained thresholds are intentionally ignored: the band is fixed to a genuine 50/50. Low resolution and member
+    # disagreement are still surfaced as warnings/evidence, but no longer turn a lean into "Inconclusive".
+    lo, hi = INCONCLUSIVE_BAND
     widened: list[str] = []
-    if min_side < 64:                      # tiny images carry little evidence -> wider "inconclusive" band
-        lo, hi = lo - 0.05, hi + 0.05
-        widened.append("low_resolution")
-    if disagreement > t["disagreement_max"]:  # members contradict each other -> be modest
-        lo, hi = lo - 0.10, hi + 0.10
-        widened.append("members_disagree")
-
     source = "model"
     if strong_provenance:
         # The file itself declares AI origin. Never *lower* the score; lift it to a high floor.
         p, source = max(p, 0.98), "provenance"
-    verdict = "ai_generated" if p >= hi else "real" if p <= lo else "inconclusive"
+    verdict = "ai_generated" if p >= hi else "real" if p < lo else "inconclusive"
     confidence = p if verdict == "ai_generated" else (1 - p) if verdict == "real" else max(p, 1 - p)
     return {"verdict": verdict, "p": p, "confidence": confidence, "source": source,
             "bands": {"real_max": round(lo, 4), "ai_min": round(hi, 4)}, "widened_by": widened}

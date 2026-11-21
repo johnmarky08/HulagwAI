@@ -11,9 +11,10 @@ from training import metrics as M
 from training.common import done, drop_cache, load_manifest, log, parse, save_json
 
 
-def pick_thresholds(y, p, target=0.97):
-    """Widest 'decided' region such that precision of AI calls and of Real calls stay >= target on validation."""
-    best = {"real_max": 0.40, "ai_min": 0.60, "coverage": 0.0}
+def pick_thresholds(y, p, target=0.92):
+    """Widest 'decided' region such that precision of AI calls and of Real calls stay >= target on validation.
+    The result is replaced by fusion.INCONCLUSIVE_BAND so Inconclusive only means a genuine 50/50."""
+    best = {"real_max": 0.42, "ai_min": 0.58, "coverage": 0.0}
     for ai_min in np.arange(0.50, 0.99, 0.01):
         sel = p >= ai_min
         if sel.sum() >= 20 and (y[sel] == 1).mean() >= target:
@@ -22,7 +23,8 @@ def pick_thresholds(y, p, target=0.97):
         sel = p <= real_max
         if sel.sum() >= 20 and (y[sel] == 0).mean() >= target:
             best["real_max"] = float(round(real_max, 2)); break
-    best["real_max"] = min(best["real_max"], best["ai_min"] - 0.02)
+    # The app only answers Inconclusive on a genuine 50/50, so the fitted band is replaced by that fixed band.
+    best["real_max"], best["ai_min"] = fusion.INCONCLUSIVE_BAND
     best["coverage"] = float(((p <= best["real_max"]) | (p >= best["ai_min"])).mean())
     return best
 
@@ -61,7 +63,7 @@ def main() -> None:
     p = np.array([fusion.sigmoid(cfg["bias"] + sum(w * v for w, v in zip(cfg["weights"], row))) for row in z])
     th = pick_thresholds(y, p)
     log.info("fusion %s | val AUC %.4f (clean+degraded, %d sources) | thresholds %s", cfg, M.roc_auc(y, p), len(cnt), th)
-    save_json(out, {"fusion": cfg, "thresholds": {**{k: th[k] for k in ("real_max", "ai_min")}, "disagreement_max": 0.35},
+    save_json(out, {"fusion": cfg, "thresholds": {**{k: th[k] for k in ("real_max", "ai_min")}, "disagreement_max": 0.45},
                     "val_auc": M.roc_auc(y, p), "val_coverage": th["coverage"]})
     drop_cache(ctx, "logits_val_clean", "logits_val_degraded")   # val_logits.npz keeps them for stage 7
 

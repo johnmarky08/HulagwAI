@@ -90,15 +90,19 @@ def test_decision_bands_and_confidence():
     assert fusion.decide(0.88, 0.0, t, 512, False)["verdict"] == "ai_generated"
     d = fusion.decide(0.07, 0.0, t, 512, False)
     assert d["verdict"] == "real" and d["confidence"] == pytest.approx(0.93)
-    d = fusion.decide(0.56, 0.0, t, 512, False)
-    assert d["verdict"] == "inconclusive" and d["confidence"] == pytest.approx(0.56)
+    d = fusion.decide(0.50, 0.0, t, 512, False)
+    assert d["verdict"] == "inconclusive" and d["confidence"] == pytest.approx(0.50)
 
 
-def test_disagreement_and_tiny_images_widen_the_inconclusive_band():
-    t = {"real_max": 0.4, "ai_min": 0.6, "disagreement_max": 0.35}
-    assert fusion.decide(0.65, 0.5, t, 512, False)["verdict"] == "inconclusive"
-    assert fusion.decide(0.62, 0.0, t, 32, False)["verdict"] == "inconclusive"
-    assert fusion.decide(0.62, 0.0, t, 512, False)["verdict"] == "ai_generated"
+def test_inconclusive_only_on_a_true_50_50():
+    wide = {"real_max": 0.10, "ai_min": 0.90, "disagreement_max": 0.35}
+    for p in (0.495, 0.50, 0.504):
+        assert fusion.decide(p, 0.0, wide, 512, False)["verdict"] == "inconclusive"
+    assert fusion.decide(0.51, 0.0, wide, 512, False)["verdict"] == "ai_generated"
+    assert fusion.decide(0.49, 0.0, wide, 512, False)["verdict"] == "real"
+    # tiny images and disagreeing members no longer force Inconclusive
+    assert fusion.decide(0.56, 0.9, wide, 32, False)["verdict"] == "ai_generated"
+    assert fusion.decide(0.44, 0.9, wide, 32, False)["verdict"] == "real"
 
 
 def test_provenance_only_raises_the_score():
