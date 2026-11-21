@@ -36,7 +36,7 @@
 <svelte:head><title>HulagwAI · Analysis History</title></svelte:head>
 
 <Layout active="history">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-1240px px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-16">
         <div
             class="mx-auto mb-8 mt-7 max-w-3xl text-left sm:mt-10 sm:text-center"
         >

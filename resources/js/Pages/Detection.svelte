@@ -60,7 +60,7 @@
 <svelte:head><title>HulagwAI · Image Detection</title></svelte:head>
 
 <Layout active="detect">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-1240px px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-16">
         <div class="scroll-reveal mx-auto mb-8 mt-10 max-w-3xl text-center">
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
@@ -82,30 +82,27 @@
             class="mx-auto mb-12 flex max-w-3xl items-center justify-center gap-2 sm:gap-5"
         >
             {#each ["Upload", "Analyze", "Results"] as label, index}
+                {@const activeIndex =
+                    ui.phase === "upload" ? 0 : ui.phase === "analyzing" ? 1 : 2}
+                {@const isComplete =
+                    ui.phase === "results"
+                        ? true
+                        : index < activeIndex ||
+                          (index === 0 && ui.phase === "upload" && ui.file)}
                 <div
                     class="flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold  sm:min-w-40 sm:gap-3 sm:text-base"
-                    class:bg-indigo-800={index ===
-                        (ui.phase === "upload"
-                            ? 0
-                            : ui.phase === "analyzing"
-                              ? 1
-                              : 2)}
-                    class:text-white={index ===
-                        (ui.phase === "upload"
-                            ? 0
-                            : ui.phase === "analyzing"
-                              ? 1
-                              : 2)}
-                    class:shadow-lg={index ===
-                        (ui.phase === "upload"
-                            ? 0
-                            : ui.phase === "analyzing"
-                              ? 1
-                              : 2)}
+                    class:bg-emerald-800={isComplete}
+                    class:text-white={isComplete || index === activeIndex}
+                    class:bg-indigo-800={index === activeIndex && !isComplete}
+                    class:shadow-lg={isComplete || index === activeIndex}
                 >
                     <span
-                        class="grid size-7 shrink-0 place-items-center rounded-full bg-slate-400 text-slate-900"
-                        >{index + 1}</span
+                        class="grid size-7 shrink-0 place-items-center rounded-full"
+                        class:bg-emerald-400={isComplete}
+                        class:text-slate-950={isComplete}
+                        class:bg-slate-400={!isComplete}
+                        class:text-slate-900={!isComplete}
+                        >{isComplete ? "✓" : index + 1}</span
                     >
 
                     <span 
@@ -119,7 +116,7 @@
 
         {#if serviceWarning && ui.phase === "upload"}
             <p
-                class="mb-6 rounded-xl border border-amber-700 bg-amber-950/30 p-4 text-sm text-amber-300"
+                class="mx-auto mb-6 w-2/3 rounded-xl border border-amber-700 bg-amber-950/30 p-4 text-sm text-amber-300"
                 role="status"
             >
                 ⚠ &nbsp;{serviceWarning}
@@ -128,32 +125,43 @@
 
         {#if ui.error}
             <section
-                class="flex min-h-480px flex-col items-center justify-center rounded-2xl border border-red-500 bg-rose-400 px-6 py-12 text-center text-white"
+                class="mx-auto flex min-h-480px w-2/3 flex-col items-center justify-center rounded-2xl border border-rose-500/70 bg-slate-900/95 px-6 py-12 text-center shadow-xl shadow-rose-950/20"
+                role="alert"
             >
-                <span
-                    class="mb-3 grid size-16 place-items-center rounded-2xl bg-red-500 text-4xl shadow-lg shadow-red-600/40"
-                    >×</span
+                <div
+                    class="mb-5 grid size-16 place-items-center rounded-2xl border border-rose-400/40 bg-rose-950/70 text-4xl font-light text-rose-300"
                 >
-                <h2 class="text-3xl font-extrabold">{ui.errorTitle}</h2>
-                <p class="mb-5 mt-2 max-w-lg text-sm text-red-700">
+                    ×
+                </div>
+                <span
+                    class="mb-2 text-xs font-bold tracking-[0.18em] text-rose-400"
+                    >ANALYSIS UNSUCCESSFUL</span
+                >
+                <h2 class="text-3xl font-extrabold text-white">
+                    {ui.errorTitle}
+                </h2>
+                <p class="mt-3 max-w-lg text-sm leading-6 text-slate-300">
                     {ui.error}
                 </p>
                 <button
-                    class="rounded-xl bg-linear-to-br from-indigo-500 to-indigo-700 px-8 py-4 font-semibold text-white"
+                    class="mt-6 rounded-xl border border-indigo-400/50 bg-linear-to-br from-indigo-500 to-indigo-700 px-8 py-3.5 font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:from-indigo-400 hover:to-indigo-600"
                     onclick={clearError}>↑ &nbsp; Try Again</button
                 >
-                <div class="mt-5 flex gap-1 text-[10px] text-slate-400">
-                    <span class="rounded bg-slate-800 px-2 py-1">JPG</span><span
-                        class="rounded bg-slate-800 px-2 py-1">JPEG</span
-                    ><span class="rounded bg-slate-800 px-2 py-1">PNG</span
-                    ><span class="rounded bg-slate-800 px-2 py-1">WEBP</span
-                    ><span class="rounded bg-slate-800 px-2 py-1">Max 5 MB</span
-                    >
+                <div class="mt-6 flex flex-wrap justify-center gap-1.5 text-[10px] text-slate-400">
+                    <span class="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-1">JPG</span>
+                    <span class="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-1">JPEG</span>
+                    <span class="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-1">PNG</span>
+                    <span class="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-1">WEBP</span>
+                    <span class="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-1">Max 50 MB</span>
                 </div>
             </section>
         {:else if ui.phase === "upload" && !ui.file}
             <label
-                class="upload-dropzone scroll-reveal flex min-h-420px cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-indigo-500 bg-indigo-950/40 px-6 py-12 text-center transition hover:bg-indigo-950/70 sm:min-h-590px"
+                class="align-center place-self-center w-2/3 upload-dropzone scroll-reveal 
+                flex min-h-420px cursor-pointer flex-col items-center 
+                justify-center rounded-2xl border border-dashed 
+                border-indigo-500 bg-indigo-950/40 px-6 py-12 text-center transition 
+                hover:bg-indigo-950/70 sm:min-h-590px"
                 ondragover={allowDrop}
                 ondrop={handleFileDrop}
             >
@@ -188,7 +196,7 @@
                         >WEBP</i
                     ><i
                         class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
-                        >Max 5 MB</i
+                        >Max 50 MB</i
                     ></span
                 >
             </label>
