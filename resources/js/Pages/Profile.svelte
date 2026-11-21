@@ -90,7 +90,7 @@
 
 <Layout active="">
     <main
-        class="mx-auto min-h-[calc(100vh-80px)] max-w-848px px-5 py-10 sm:px-8"
+        class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 py-10 sm:px-8"
     >
         <header class="mb-6">
             <h1 class="text-3xl font-extrabold tracking-tight text-white">

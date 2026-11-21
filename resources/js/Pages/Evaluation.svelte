@@ -39,7 +39,7 @@
 <svelte:head><title>HulagwAI · Model Evaluation</title></svelte:head>
 
 <Layout active="evaluation">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-1240px px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-16">
         <div class="mx-auto mb-8 mt-10 max-w-3xl text-center">
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
