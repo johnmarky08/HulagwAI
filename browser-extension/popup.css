@@ -204,6 +204,88 @@ input[type="text"]:focus {
 .status.error {
     color: #fda4af;
 }
+
+/* Verdict pill: matches the History/Dashboard badges. */
+.verdict-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+.verdict-pill::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.verdict-pill.verdict-ai_generated {
+    background: #4c0519;
+    color: #fb7185;
+}
+.verdict-pill.verdict-real {
+    background: #022c22;
+    color: #34d399;
+}
+.verdict-pill.verdict-inconclusive {
+    background: #451a03;
+    color: #fbbf24;
+}
+
+/* Scan result card shown after a successful analysis. */
+.status.result-card {
+    --accent: #fbbf24;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.status.result-card.verdict-ai_generated {
+    --accent: #fb7185;
+}
+.status.result-card.verdict-real {
+    --accent: #34d399;
+}
+.confidence {
+    width: 100%;
+}
+.confidence-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    color: #a8b3c7;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.confidence-head strong {
+    color: var(--accent);
+    font-size: 15px;
+    letter-spacing: 0;
+}
+.confidence-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(148 163 184 / 18%);
+}
+.confidence-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 0.4s ease;
+}
 .enable-row {
     display: flex;
     align-items: center;
@@ -626,6 +708,30 @@ button {
     }
     .status.error {
         color: #b42348;
+    }
+    .verdict-pill.verdict-ai_generated {
+        background: #ffe4e6;
+        color: #be123c;
+    }
+    .verdict-pill.verdict-real {
+        background: #d1fae5;
+        color: #047857;
+    }
+    .verdict-pill.verdict-inconclusive {
+        background: #fef3c7;
+        color: #b45309;
+    }
+    .status.result-card {
+        --accent: #b45309;
+    }
+    .status.result-card.verdict-ai_generated {
+        --accent: #be123c;
+    }
+    .status.result-card.verdict-real {
+        --accent: #047857;
+    }
+    .confidence-head {
+        color: #596579;
     }
     .enable-row {
         border-color: #d2d6eb;

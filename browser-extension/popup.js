@@ -233,7 +233,9 @@ async function openAnalysis(id) {
       return;
     }
     const result = payload.result;
-    adLabel.textContent = result.label;
+    const labelPill = document.createElement("span");
+    applyVerdictPill(labelPill, result.label, result.verdict);
+    adLabel.replaceChildren(labelPill);
     adConfidence.textContent = `${result.confidence_percent}%`;
     adAi.textContent = `${result.ai_percent}% AI-generated`;
     adDate.textContent = payload.analyzed_at ? new Date(payload.analyzed_at).toLocaleString() : "—";
@@ -433,6 +435,53 @@ function showReviewStatus(message, kind = "") {
   reviewStatus.className = `status ${kind}`.trim();
 }
 
+const VERDICTS = ["ai_generated", "real", "inconclusive"];
+
+function verdictKey(verdict) {
+  return VERDICTS.includes(verdict) ? verdict : "inconclusive";
+}
+
+// Styles a label element as a verdict pill coloured to match the prediction.
+function applyVerdictPill(el, label, verdict) {
+  el.textContent = label;
+  el.className = `verdict-pill verdict-${verdictKey(verdict)}`;
+}
+
+// Replaces the status line with a verdict pill and a confidence meter.
+function showReviewResult(result) {
+  const percent = Math.max(0, Math.min(100, Math.round(Number(result.confidencePercent) || 0)));
+  const key = verdictKey(result.verdict);
+  reviewStatus.replaceChildren();
+  reviewStatus.className = `status result-card verdict-${key}`;
+
+  const pill = document.createElement("span");
+  applyVerdictPill(pill, result.label, key);
+
+  const meter = document.createElement("div");
+  meter.className = "confidence";
+  const head = document.createElement("div");
+  head.className = "confidence-head";
+  const caption = document.createElement("span");
+  caption.textContent = "Confidence";
+  const value = document.createElement("strong");
+  value.textContent = `${percent}%`;
+  head.append(caption, value);
+  const track = document.createElement("div");
+  track.className = "confidence-track";
+  track.setAttribute("role", "meter");
+  track.setAttribute("aria-valuemin", "0");
+  track.setAttribute("aria-valuemax", "100");
+  track.setAttribute("aria-valuenow", String(percent));
+  track.setAttribute("aria-label", "Confidence");
+  const fill = document.createElement("span");
+  fill.className = "confidence-fill";
+  fill.style.width = `${percent}%`;
+  track.append(fill);
+  meter.append(head, track);
+
+  reviewStatus.append(pill, meter);
+}
+
 function showSettingsView() {
   review = null;
   reviewView.hidden = true;
@@ -576,7 +625,7 @@ confirmButton.addEventListener("click", () => {
     const result = response.result;
     review.done = true;
     await clearScanReview();
-    showReviewStatus(`${result.label} · ${result.confidencePercent}% confidence · Analysis ${result.analysisId}`, "success");
+    showReviewResult(result);
     confirmButton.textContent = "Analysis complete";
     cancelButton.disabled = false;
     cancelButton.textContent = "Close";
