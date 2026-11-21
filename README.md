@@ -150,7 +150,7 @@ The training run also produces `MODEL_CARD.md` (data, splits, leakage check, bas
     - **Frequency MLP** — spectrum / noise-residual statistics, independent of the other two.
       Images ≥ 224 px are inspected at **native resolution** (5 crops); resizing would erase the traces being looked for.
 3. **Fusion**: logistic regression fitted on a validation split → probability `P(AI)`.
-4. **Three-way verdict**: _Real_ ≤ `real_max`, _AI_ ≥ `ai_min`, otherwise **Inconclusive**. Thresholds are fitted so that decided calls reach ≥ 97 % precision on validation. The band widens automatically for tiny images or when the members disagree.
+4. **Three-way verdict**: _Real_ ≤ `real_max`, _AI_ ≥ `ai_min`, otherwise **Inconclusive**. Inconclusive is reserved for a genuine 50/50: the AI score must round to 50 % (0.495 ≤ p < 0.505); any lean either way is reported as Real or AI.
 
 The confidence shown to users is _how strongly the model favours its prediction_ — not the probability the image is authentic. Every result says so.
 
