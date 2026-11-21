@@ -12,7 +12,7 @@
     const googleError = googleErrorFromUrl();
 </script>
 
-<svelte:head><title>HulagwAI · Log in</title></svelte:head>
+<svelte:head><title>HulagwAI · Log In</title></svelte:head>
 <Layout active="">
     <main class="grid min-h-[calc(100vh-80px)] place-items-center px-5 py-12">
         <div class="w-full max-w-[480px]">
@@ -20,7 +20,7 @@
                 class="rounded-2xl border border-slate-800 bg-slate-900/70 p-7 shadow-2xl shadow-black/20 sm:p-8"
             >
                 <h1 class="text-3xl font-extrabold tracking-tight">
-                    Welcome back
+                    Welcome Back
                 </h1>
                 <p class="mt-2 text-sm text-slate-400">
                     Log in to revisit your saved analysis results.
@@ -87,7 +87,7 @@
                     <button
                         class="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
                         disabled={form.busy}
-                        >{form.busy ? "Logging in…" : "Log in"}</button
+                        >{form.busy ? "Logging in…" : "Log In"}</button
                     >
                 </form>
                 <p class="mt-6 text-center text-sm text-slate-400">

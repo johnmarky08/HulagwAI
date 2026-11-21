@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Services\FileVault;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -100,7 +102,7 @@ class HulagwaiTest extends TestCase
         $row = Analysis::where('uuid', $id)->firstOrFail();
         $this->assertSame('done', $row->status->value);
         $this->assertSame('secret_name.png', $row->original_name);
-        $raw = \Illuminate\Support\Facades\DB::table('analyses')->where('uuid', $id)->first();
+        $raw = DB::table('analyses')->where('uuid', $id)->first();
         $this->assertStringNotContainsString('secret_name', $raw->original_name, 'filename must be encrypted at rest');
         $this->assertStringNotContainsString('ai_generated', (string) $raw->details);
         $this->assertCount(4, Storage::disk('local')->allFiles('vault'));
@@ -122,7 +124,7 @@ class HulagwaiTest extends TestCase
         $this->actingAs($b)->deleteJson("/api/v1/analyses/$id")->assertNotFound();
         $this->assertSame(1, Analysis::count());
         $this->flushSession();
-        auth()->logout();
+        Auth::logout();
         $this->getJson("/api/v1/analyses/$id")->assertNotFound();  // guest
         $this->actingAs($a)->deleteJson("/api/v1/analyses/$id")->assertOk();
         $this->assertSame(0, Analysis::count());
@@ -272,7 +274,7 @@ class HulagwaiTest extends TestCase
             ->assertJsonPath('result.evidence.heatmap.available', true);
         $this->assertNotEmpty($r->json('result.evidence.heatmap.image_url'));
         $this->assertNotEmpty($r->json('result.attribution.disclaimer'));
-        $raw = \DB::table('analyses')->where('uuid', $id)->first();
+        $raw = DB::table('analyses')->where('uuid', $id)->first();
         $this->assertStringNotContainsString('Midjourney', (string) $raw->details, 'attribution must be encrypted at rest');
         $this->get("/api/v1/analyses/$id/image?variant=heatmap")->assertOk()->assertHeader('Content-Type', 'image/jpeg');
         $this->assertCount(4, Storage::disk('local')->allFiles('vault'));          // original, preview, thumb, heat map
@@ -334,7 +336,7 @@ class HulagwaiTest extends TestCase
         $id = $this->actingAs($u)->postJson('/api/v1/analyses', ['image' => $this->png()])->json('id');
         $rec = \App\Services\Records::fromModel(Analysis::where('uuid', $id)->first());
         $html = view('reports.analysis', app(\App\Services\ReportBuilder::class)->viewData($rec, ModelVersion::first(), null, null))->render();
-        foreach (['Likely generator', 'Midjourney', '71%', 'Why it may look AI-generated', 'Pixel-level texture signal', 'closed-set estimate', 'Recall / sensitivity'] as $needle) {
+        foreach (['Likely Generator', 'Midjourney', '71%', 'Why It May Look AI-Generated', 'Pixel-level texture signal', 'closed-set estimate', 'Recall / sensitivity'] as $needle) {
             $this->assertStringContainsString($needle, $html, $needle);
         }
         if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {

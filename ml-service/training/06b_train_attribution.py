@@ -18,45 +18,69 @@ from app.attribution import FAMILIES, FAMILY_IDS
 from training import members_eval as ME
 from training import metrics as M
 from training.augment import degrade
-from training.common import done, load_manifest, log, open_rgb, parse, save_json
+from training.common import (artifacts_fingerprint, cached_rows, done, drop_cache, load_manifest, log, open_rgb, parse,
+                             paths_hash, save_json)
 
 TARGET_ACC_WHEN_ACCEPTED = 0.80
 
 
 class _DS:
-    def __init__(self, paths, degrade_p, seed):
-        self.p, self.dp, self.seed = paths, degrade_p, seed
+    """Rows start.. of `paths`; yields the GLOBAL index, so the seeded degradations are the same chunk by chunk."""
+    def __init__(self, paths, degrade_p, seed, start=0):
+        self.p, self.dp, self.seed, self.start = paths, degrade_p, seed, start
 
     def __len__(self): return len(self.p)
 
-    def __getitem__(self, i):
-        img = open_rgb(self.p[i])
+    def __getitem__(self, j):
+        i = self.start + j
+        img = open_rgb(self.p[j])
         if img is not None and self.dp and random.Random(self.seed + i).random() < self.dp:
             img = degrade(img, random.Random(self.seed * 31 + i))
         return i, img
 
 
-def embed(ctx, paths, members, degrade_p=0.0):
-    """[N, Dclip+Dcnn] embeddings (same code path as production); rows of unreadable images are NaN."""
+def _embed_dim(members) -> int:
+    """Width of one embedding (CLIP + CNN), measured once on a blank image so every cached chunk has the same shape."""
+    from PIL import Image
+    img = Image.new("RGB", (256, 256), (128, 128, 128))
+    return len(members["clip"].analyze(img)[1]) + len(members["cnn"].analyze(img)[1])
+
+
+def _embed_range(ctx, paths, members, degrade_p, start, end, d):
+    """[end-start, d] float32 embeddings of rows start..end; unreadable images are NaN rows."""
     from torch.utils.data import DataLoader
 
-    X = None
+    a = np.full((end - start, d), np.nan, dtype=np.float32)
     w = ctx.prof["workers"]                    # full-size images in flight: keep it small (free Colab has ~12 GB RAM)
-    dl = DataLoader(_DS(paths, degrade_p, ctx.args.seed), batch_size=2, num_workers=w, collate_fn=list,
-                    **({"prefetch_factor": 2} if w else {}))
+    dl = DataLoader(_DS(paths[start:end], degrade_p, ctx.args.seed, start), batch_size=2, num_workers=w,
+                    collate_fn=list, **({"prefetch_factor": 2} if w else {}))
     for n, batch in enumerate(dl):
         for i, img in batch:
             if img is None:
                 continue
             _, fc = members["clip"].analyze(img)
             _, fn = members["cnn"].analyze(img)
-            v = np.concatenate([fc, fn]).astype(np.float32)
-            if X is None:
-                X = np.full((len(paths), v.shape[0]), np.nan, dtype=np.float32)
-            X[i] = v
+            a[i - start] = np.concatenate([fc, fn]).astype(np.float32)
         if n % 800 == 0:
-            log.info("embeddings %d/%d", min((n + 1) * 2, len(paths)), len(paths))
-    return X
+            log.info("embeddings %d/%d", min(start + (n + 1) * 2, len(paths)), len(paths))
+    return a
+
+
+def embed(ctx, paths, members, degrade_p=0.0, cache: str | None = None):
+    """[N, Dclip+Dcnn] embeddings (same code path as production); rows of unreadable images are NaN; None if no image
+    is readable. With `cache`, computed chunk by chunk under <work>/cache/attr_<cache>/ (resumes after a disconnect);
+    the cache is keyed on the paths, the degradation settings and the trained member weights."""
+    if not paths:
+        return None
+    d = _embed_dim(members)
+    if cache is None:
+        X = _embed_range(ctx, paths, members, degrade_p, 0, len(paths), d)
+    else:
+        key = {"paths": paths_hash(paths), "degrade_p": degrade_p, "seed": ctx.args.seed,
+               "models": artifacts_fingerprint(ctx), "dim": d}
+        X = cached_rows(ctx, f"attr_{cache}", key, len(paths),
+                        lambda s, e: _embed_range(ctx, paths, members, degrade_p, s, e, d), chunk=500)
+    return None if np.isnan(X).all() else X
 
 
 def softmax(z):
@@ -102,9 +126,11 @@ def main() -> None:
     emb = {}
     for split, dp in (("train", 0.5), ("val", 0.0), ("test", 0.0)):
         sub = fk[fk.split == split].reset_index(drop=True)
-        X = embed(ctx, sub["path"].tolist(), members, dp)
-        if X is None:
-            raise SystemExit(f"no readable images in the {split} split for attribution")
+        X = embed(ctx, sub["path"].tolist(), members, dp, cache=split)
+        if X is None:                           # e.g. a dataset that only made it into train - skip, don't fail the run
+            log.warning("no readable AI images of families %s in the %s split - attribution skipped "
+                        "(detection is unaffected)", classes, split)
+            return
         ok = ~np.isnan(X).any(1)
         emb[split] = (X[ok], sub["family"].map(idx).to_numpy()[ok])
     (xtr, ytr), (xva, yva), (xte, yte) = emb["train"], emb["val"], emb["test"]
@@ -177,7 +203,9 @@ def main() -> None:
         od = pd.read_csv(ood)
         od = od[od["family"].notna()].reset_index(drop=True) if "family" in od else od.iloc[0:0]
         if len(od):
-            Xo = embed(ctx, od["path"].tolist(), members)
+            Xo = embed(ctx, od["path"].tolist(), members, cache="ood")
+            if Xo is None:
+                Xo = np.full((len(od), xtr.shape[1]), np.nan, dtype=np.float32)
             ok = ~np.isnan(Xo).any(1)
             od, Xo = od[ok].reset_index(drop=True), Xo[ok]
             po = softmax(logits(Xo) / T)
@@ -194,6 +222,7 @@ def main() -> None:
                 res[str(g)] = row
             rep["ood"] = {"name": "Synthbuster (generators never seen in training)", "per_generator": res}
     save_json(ctx.reports / "attribution_metrics.json", M.clean(rep))
+    drop_cache(ctx, "attr_train", "attr_val", "attr_test", "attr_ood")   # stage finished: embeddings not needed again
     t = rep["test"]
     log.info("ATTRIBUTION test n=%d acc=%.4f top3=%.4f macroF1=%.4f coverage=%.2f acc@answered=%s (chance %.2f)",
              t["n"], t["accuracy"], t["top3_accuracy"], t["macro_f1"], t["coverage"], t["accuracy_when_accepted"], 1 / K)

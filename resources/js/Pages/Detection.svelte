@@ -68,8 +68,8 @@
                 {ui.phase === "results"
                     ? "Analysis Result"
                     : ui.phase === "analyzing"
-                      ? "Analyzing your image"
-                      : "Start detecting"}
+                      ? "Analyzing Your Image"
+                      : "Start Detecting"}
             </h1>
             <p class="mt-3 text-sm text-slate-400">
                 {ui.phase === "upload"
@@ -299,7 +299,7 @@
                         class="text-xs font-bold tracking-wide text-indigo-400"
                         >ANALYSIS IN PROGRESS</span
                     >
-                    <h2 class="mt-3 text-3xl font-bold">Finding the details</h2>
+                    <h2 class="mt-3 text-3xl font-bold">Finding the Details</h2>
                     <p class="mt-3 text-sm text-slate-400">
                         Checking visual patterns that may indicate synthetic
                         content.
@@ -362,7 +362,7 @@
                                 ? ui.heatmapUrl
                                 : ui.resultPreview || ui.preview}
                             alt={ui.showHeatmap
-                                ? "Detector heat map over the analysed image"
+                                ? "Detector heat map over the analyzed image"
                                 : "Analysis result"}
                         />
                         {#if ui.showHeatmap}<span
@@ -442,15 +442,15 @@
                             type="button"
                             class="rounded-xl border border-indigo-500 bg-indigo-800 px-4 py-3 text-sm font-semibold text-white"
                             onclick={removeFile}
-                            >↑ &nbsp; Analyze another</button
+                            >↑ &nbsp; Analyze Another</button
                         ><a
                             use:inertia
                             class="rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
-                            href="/history">View history</a
+                            href="/history">View History</a
                         >{#if ui.reportUrl}<a
                                 class="rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
                                 href={ui.reportUrl}
-                                download>↓ &nbsp;Download report (PDF)</a
+                                download>↓ &nbsp;Download Report (PDF)</a
                             >{/if}
                     </div>
                 </article>

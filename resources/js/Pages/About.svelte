@@ -23,22 +23,22 @@
     const features = [
         {
             icon: "⌗",
-            title: "Real vs. AI prediction",
+            title: "Real vs. AI Prediction",
             text: "Each image gets a verdict (likely real, likely AI-generated, or inconclusive), an AI-likelihood score and a confidence level.",
         },
         {
             icon: "⬡",
-            title: "Likely generator",
+            title: "Likely Generator",
             text: "For images judged AI-generated, the model estimates which family of generator made it, or answers “unknown” when unsure.",
         },
         {
             icon: "▦",
-            title: "Evidence & heat map",
+            title: "Evidence & Heat Map",
             text: "Detector signals, file provenance findings and a heat map of where the pixel-level detector reacts most strongly.",
         },
         {
             icon: "◷",
-            title: "History & reports",
+            title: "History & Reports",
             text: "Signed-in users can search, filter, export and delete past analyses, and download a PDF report for any result.",
         },
     ];
@@ -46,22 +46,22 @@
     const pipeline = [
         {
             n: "01",
-            title: "Check the file",
+            title: "Check the File",
             text: "The upload is validated (type, size, dimensions) and re-encoded so only clean pixel data reaches the model.",
         },
         {
             n: "02",
-            title: "Read the provenance",
+            title: "Read the Provenance",
             text: "Embedded metadata such as C2PA Content Credentials, EXIF and generator parameters is inspected for declared AI tools.",
         },
         {
             n: "03",
-            title: "Run the detectors",
+            title: "Run the Detectors",
             text: "Independent detectors look at pixel texture, the frequency / noise spectrum and the image's overall look and style.",
         },
         {
             n: "04",
-            title: "Fuse and decide",
+            title: "Fuse and Decide",
             text: "Detector scores are combined into one calibrated probability; weak or conflicting evidence becomes “Inconclusive”.",
         },
     ];
@@ -86,7 +86,7 @@
             <p class="mt-3 text-sm leading-6 text-slate-400">
                 HulagwAI estimates whether an image is AI-generated or captured
                 from a real-world source, and explains why, so people can make a
-                more informed judgement about what they see online.
+                more informed judgment about what they see online.
             </p>
         </div>
 
@@ -115,7 +115,7 @@
                 id="pipeline-heading"
                 class="mb-6 text-center text-3xl font-extrabold tracking-tight text-indigo-400"
             >
-                How a verdict is reached
+                How a Verdict Is Reached
             </h2>
             <ol class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {#each pipeline as step (step.n)}
@@ -140,7 +140,7 @@
                 aria-labelledby="model-heading"
             >
                 <h2 id="model-heading" class="text-xl font-bold">
-                    The model at a glance
+                    The Model at a Glance
                 </h2>
                 {#if test}
                     <p class="mt-1 text-xs text-slate-400">
@@ -148,7 +148,7 @@
                         of {test.n?.toLocaleString() ?? "–"} images
                     </p>
                     <div class="mt-5 grid grid-cols-2 gap-4">
-                        {#each [["Accuracy", pct(test.accuracy)], ["F1 score", num(test.f1)], ["ROC-AUC", num(test.roc_auc)], ["Recall", pct(test.recall)]] as [label, value] (label)}
+                        {#each [["Accuracy", pct(test.accuracy)], ["F1 Score", num(test.f1)], ["ROC-AUC", num(test.roc_auc)], ["Recall", pct(test.recall)]] as [label, value] (label)}
                             <div
                                 class="rounded-xl border border-slate-700 bg-slate-950 p-4"
                             >
@@ -173,7 +173,7 @@
                 <a
                     use:inertia
                     class="mt-5 inline-flex rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
-                    href="/evaluation">See the full evaluation ›</a
+                    href="/evaluation">See the Full Evaluation ›</a
                 >
             </article>
 
@@ -182,14 +182,14 @@
                 aria-labelledby="use-heading"
             >
                 <h2 id="use-heading" class="text-xl font-bold">
-                    Intended use
+                    Intended Use
                 </h2>
                 <p class="mt-3 text-sm leading-6 text-slate-300">
                     {notice?.intended_use ??
                         "HulagwAI is an educational decision-support tool that gives a second opinion. It is not proof and must not be the only basis for judging anyone."}
                 </p>
                 {#if notice?.responsible_use?.length}
-                    <h3 class="mt-5 text-sm font-semibold">Use it responsibly</h3>
+                    <h3 class="mt-5 text-sm font-semibold">Use It Responsibly</h3>
                     <ul
                         class="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-400"
                     >
@@ -235,7 +235,7 @@
         <section
             class="rounded-2xl border border-indigo-500/50 bg-indigo-950/70 p-6 text-center md:p-8"
         >
-            <h2 class="text-2xl font-extrabold">Ready to check an image?</h2>
+            <h2 class="text-2xl font-extrabold">Ready to Check an Image?</h2>
             <p class="mt-2 text-sm text-slate-300">
                 Upload a JPG, PNG or WEBP up to 5 MB, or install the browser
                 extension to scan images on the web.
@@ -244,12 +244,12 @@
                 <a
                     use:inertia
                     class="rounded-xl border border-indigo-400 bg-indigo-700 px-5 py-3 text-sm font-semibold text-white"
-                    href="/detect">Analyze an image</a
+                    href="/detect">Analyze an Image</a
                 >
                 <a
                     use:inertia
                     class="rounded-xl border border-indigo-500 px-5 py-3 text-sm text-indigo-300"
-                    href="/extension">Get the extension</a
+                    href="/extension">Get the Extension</a
                 >
             </div>
         </section>

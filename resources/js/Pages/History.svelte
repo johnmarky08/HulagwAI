@@ -43,7 +43,7 @@
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent sm:text-5xl"
             >
-                Analysis history
+                Analysis History
             </h1>
             <p class="mt-3 text-sm text-slate-400">
                 Search, filter, and revisit your previous image analyses.
@@ -136,7 +136,7 @@
                     class="flex flex-wrap items-center justify-between gap-3 px-2"
                 >
                     <div>
-                        <h2 class="text-lg font-bold">Recent analyses</h2>
+                        <h2 class="text-lg font-bold">Recent Analyses</h2>
                         <span class="text-xs text-slate-400"
                             >{ui.sortFilter}</span
                         >
@@ -161,7 +161,7 @@
                             disabled={!ui.stats.total || ui.clearingHistory}
                             >{ui.clearingHistory
                                 ? "Clearing…"
-                                : "Clear history"}</button
+                                : "Clear History"}</button
                         >
                     </div>
                 </div>
@@ -175,7 +175,7 @@
                                     >Image / Filename</th
                                 ><th class="p-3 font-medium">Result</th><th
                                     class="p-3 font-medium">Confidence</th
-                                ><th class="p-3 font-medium">Date analyzed</th
+                                ><th class="p-3 font-medium">Date Analyzed</th
                                 ><th class="p-3"></th></tr
                             ></thead
                         ><tbody>
@@ -352,7 +352,7 @@
                                                 use:inertia
                                                 class="text-xs font-semibold text-indigo-300"
                                                 href={"/detect?analysis=" +
-                                                    row.id}>View result ›</a
+                                                    row.id}>View Result ›</a
                                             >
                                         </span>
                                     </div>
@@ -402,7 +402,7 @@
 </Layout>
 
 <style>
-    /* Dashboard colour coding for the summary cards. */
+    /* Color coding for the summary cards (matches the Dashboard). */
     .history-stat[data-tone="indigo"] {
         --c: #818cf8;
         --bar: #6366f1;

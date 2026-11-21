@@ -49,10 +49,17 @@ def _rows(paths, label, source, generator, split) -> list[dict]:
 
 
 def _split_random(rows: list[dict], rng: random.Random, val=0.1, test=0.1) -> None:
-    rng.shuffle(rows)
-    n = len(rows)
-    for i, r in enumerate(rows):
-        r["split"] = "test" if i < n * test else "val" if i < n * (test + val) else "train"
+    """Stratified train/val/test split: every (label, generator) group is split 80/10/10 on its own, so each split has
+    the same real/AI ratio and the same generator mix (a plain shuffle can leave a small generator out of val/test)."""
+    groups: dict[tuple, list[dict]] = {}
+    for r in rows:
+        groups.setdefault((r["label"], r["generator"]), []).append(r)
+    for key in sorted(groups, key=str):              # sorted -> reproducible with the same seed
+        g = groups[key]
+        rng.shuffle(g)
+        n_test, n_val = round(len(g) * test), round(len(g) * val)
+        for i, r in enumerate(g):
+            r["split"] = "test" if i < n_test else "val" if i < n_test + n_val else "train"
 
 
 def dedup_and_check_leakage(df: pd.DataFrame, report_path) -> pd.DataFrame:
@@ -61,18 +68,35 @@ def dedup_and_check_leakage(df: pd.DataFrame, report_path) -> pd.DataFrame:
     * duplicate across splits  -> kept in the 'strongest' split only (train > val > test), removed elsewhere
     * duplicate inside a split -> kept once
     * same bytes labelled both real and fake -> dropped entirely (label noise)
+    * missing, empty or unreadable (corrupt) image files -> dropped and counted, so no stage trains on holes
     Near-duplicates (resized/re-encoded copies) are NOT detected; this limitation is documented in the model card.
     """
     import json
     from concurrent.futures import ThreadPoolExecutor
 
-    def h(path: str) -> str:
-        with open(path, "rb") as f:
-            return hashlib.sha256(f.read()).hexdigest()
+    import io
+
+    from PIL import Image
+
+    def h(path: str) -> str | None:
+        try:
+            with open(path, "rb") as f:
+                data = f.read()
+            with Image.open(io.BytesIO(data)) as im:
+                im.verify()                         # header + structure check without decoding all pixels
+            return hashlib.sha256(data).hexdigest()
+        except Exception:  # noqa: BLE001 - missing / truncated / not an image
+            return None
 
     with ThreadPoolExecutor(8) as ex:
         df = df.assign(sha=list(ex.map(h, df["path"])))
-    before = len(df)
+    bad = df["sha"].isna()
+    n_bad = int(bad.sum())
+    if n_bad:
+        log.warning("leakage check: %d missing or unreadable image files dropped (per source: %s)",
+                    n_bad, df[bad].groupby("source").size().to_dict())
+    df = df[~bad]
+    before = len(df) + n_bad
     conflict = df.groupby("sha")["label"].nunique()
     conflict_hashes = set(conflict[conflict > 1].index)
     df = df[~df["sha"].isin(conflict_hashes)]
@@ -81,31 +105,203 @@ def dedup_and_check_leakage(df: pd.DataFrame, report_path) -> pd.DataFrame:
     cross = df.groupby("sha")["split"].nunique()
     n_cross = int((cross > 1).sum())
     df = df.drop_duplicates("sha", keep="first").drop(columns="_r")
-    rep = {"images_before": before, "label_conflicts_removed": len(conflict_hashes), "hashes_in_multiple_splits": n_cross,
+    rep = {"images_before": before, "unreadable_removed": n_bad, "label_conflicts_removed": len(conflict_hashes), "hashes_in_multiple_splits": n_cross,
            "images_after": len(df), "removed_total": before - len(df)}
     report_path.write_text(json.dumps(rep, indent=2))
     log.info("leakage check: %s", rep)
     return df.drop(columns="sha")
 
 
+def _stratified_sample(g: pd.DataFrame, k: int, seed: int) -> pd.DataFrame:
+    """k rows of g, keeping each generator's share (largest-remainder allocation) instead of a plain random sample."""
+    if k >= len(g):
+        return g
+    gen = g["generator"].astype(str)
+    counts = gen.value_counts().sort_index()
+    exact = counts / counts.sum() * k
+    alloc = exact.astype(int)
+    for name in (exact - alloc).sort_values(ascending=False, kind="stable").index[: k - int(alloc.sum())]:
+        alloc[name] += 1
+    return pd.concat([g[gen == name].sample(n=int(n), random_state=seed) for name, n in alloc.items() if n])
+
+
 def balance(df: pd.DataFrame, seed: int) -> pd.DataFrame:
-    """Within every (source, split) keep as many real as fake images -> the model cannot use the 'source' as a clue."""
+    """Equal numbers of REAL and AI images within every (source, split) - so every split is 50/50 real/AI overall and
+    the model cannot use the source as a clue. The larger class is cut down stratified by generator."""
     parts = []
     for _, g in df.groupby(["source", "split"]):
         n = g["label"].value_counts()
-        k = int(n.min()) if len(n) == 2 else 0
+        k = int(n.min()) if len(n) == 2 else 0     # a (source, split) with only one class is dropped
+        if not k:
+            continue
         for _, gl in g.groupby("label"):
-            parts.append(gl.sample(n=min(k, len(gl)), random_state=seed))
+            parts.append(_stratified_sample(gl, k, seed))
     return pd.concat(parts, ignore_index=True) if parts else df.iloc[0:0]
 
 
+REQUIRED_SOURCES = ("CIFAKE",)          # the pipeline cannot work without these -> never shrunk by the cap
+
+
+def _family_floor(split: str, attr_min: int) -> int:
+    """Fewest AI images a generator family keeps per split under the cap, so stage 6b can still train on it
+    (it needs attr_min TRAIN images per family; val/test need a few for temperature scaling / the report)."""
+    return attr_min + max(2, attr_min // 4) if split == "train" else max(2, attr_min // 6)
+
+
+def _cap_ai(g: pd.DataFrame, k: int, floor: int, seed: int) -> pd.DataFrame:
+    """k AI rows, proportional per family but never below `floor` for a family (if it had that many), then
+    stratified by generator inside each family."""
+    fam = g["family"].fillna("-").astype(str)
+    counts = fam.value_counts().sort_index()
+    keep = {f: min(int(c), floor) for f, c in counts.items()}          # floors first
+    rest = max(0, k - sum(keep.values()))
+    extra = {f: int(c) - keep[f] for f, c in counts.items()}
+    tot = sum(extra.values())
+    if tot and rest:
+        share = {f: extra[f] * min(1.0, rest / tot) for f in extra}
+        for f in share:
+            keep[f] += int(share[f])
+    return pd.concat([_stratified_sample(g[fam == f], n, seed) for f, n in keep.items() if n])
+
+
+def cap_total(df: pd.DataFrame, max_images: int, seed: int, attr_min: int = 0) -> pd.DataFrame:
+    """Shrink a balanced manifest to about max_images.
+
+    * REQUIRED_SOURCES (CIFAKE) are kept complete; only the other datasets are shrunk to fill the remaining budget.
+    * Every (source, split) is shrunk by the same fraction, AI side per generator family with a floor (attribution
+      keeps >= attr_min training images per family), real side to exactly the same count -> real = AI everywhere.
+    * The 80/10/10 split and the generator mix inside each group are kept; no source loses its val/test images.
+    The floors can push the total slightly over max_images; that is logged."""
+    if not max_images or len(df) <= max_images:
+        return df
+    req = df[df["source"].isin(REQUIRED_SOURCES)]
+    opt = df[~df["source"].isin(REQUIRED_SOURCES)]
+    if opt.empty:
+        log.warning("dataset cap: only required datasets present (%d images) - nothing to shrink", len(df))
+        return df
+    budget = max_images - len(req)
+    f = max(0.0, min(1.0, budget / len(opt)))
+    parts = [req]
+    for (_, split), g in opt.groupby(["source", "split"]):
+        ai, real = g[g.label == 1], g[g.label == 0]
+        k = max(1, int(len(ai) * f))
+        ai_kept = _cap_ai(ai, k, _family_floor(split, attr_min) if attr_min else 1, seed)
+        parts += [ai_kept, _stratified_sample(real, min(len(real), len(ai_kept)), seed)]
+    out = pd.concat(parts, ignore_index=True)
+    log.info("dataset cap: %d -> %d images (max_images=%d; required %s kept complete: %d; others shrunk to ~%.1f %%)",
+             len(df), len(out), max_images, "/".join(REQUIRED_SOURCES), len(req), f * 100)
+    if len(out) > max_images * 1.05:
+        log.warning("dataset cap: %d images is above max_images=%d - the required datasets and the per-family minimum "
+                    "for attribution need that many", len(out), max_images)
+    return out
+
+
+def hard_cap(df: pd.DataFrame, max_images: int, seed: int) -> pd.DataFrame:
+    """Strict version of cap_total: the result has AT MOST max_images rows (exactly max_images, rounded down to an even
+    number, when there is enough data) - no exceptions for CIFAKE or attribution floors. Every (source, split) keeps
+    real = AI and is shrunk by about the same fraction (largest-remainder allocation, at least 1 pair per group when
+    the budget allows), each side stratified by generator."""
+    if not max_images or len(df) <= max_images:
+        return df
+    groups = list(df.groupby(["source", "split"]))
+    pairs = pd.Series({k: min(int((g.label == 0).sum()), int((g.label == 1).sum())) for k, g in groups})
+    budget = max_images // 2                                   # pairs of (real, AI)
+    base = pairs.clip(upper=1) if budget >= int((pairs > 0).sum()) else pairs * 0
+    rest = budget - int(base.sum())
+    extra_cap = pairs - base
+    exact = extra_cap / max(1, int(extra_cap.sum())) * rest
+    alloc = base + exact.astype(int)
+    for k in (exact - exact.astype(int)).sort_values(ascending=False, kind="stable").index[: budget - int(alloc.sum())]:
+        alloc[k] += 1
+    alloc = alloc.clip(upper=pairs)
+    parts = []
+    for k, g in groups:
+        n = int(alloc[k])
+        if n:
+            parts += [_stratified_sample(g[g.label == 1], n, seed), _stratified_sample(g[g.label == 0], n, seed)]
+    out = pd.concat(parts, ignore_index=True) if parts else df.iloc[0:0]
+    log.info("strict dataset cap: %d -> %d images (limit %d, all datasets shrunk proportionally)", len(df), len(out), max_images)
+    return out
+
+
+def check_balance(df: pd.DataFrame, report_path) -> None:
+    """Verify (and record for the report) that real and AI images are balanced: equal counts in every source/split."""
+    import json
+
+    per_split = df.groupby(["split", "label"]).size().unstack(fill_value=0)
+    per_source = df.groupby(["source", "split", "label"]).size().unstack(fill_value=0)
+    for c in (0, 1):
+        for t in (per_split, per_source):
+            if c not in t.columns:
+                t[c] = 0
+    bad = per_source[per_source[0] != per_source[1]]
+    if len(bad):
+        raise SystemExit(f"balance check failed - real/AI counts differ:\n{bad}\nRebuild the manifest with --force.")
+    gens = df[df.label == 1].groupby(["generator", "split"]).size().unstack(fill_value=0)
+    rep = {"per_split": {s: {"real": int(r[0]), "ai": int(r[1])} for s, r in per_split.iterrows()},
+           "per_source": {f"{src}/{sp}": {"real": int(r[0]), "ai": int(r[1])} for (src, sp), r in per_source.iterrows()},
+           "ai_generators_per_split": {g: {k: int(v) for k, v in r.items()} for g, r in gens.iterrows()}}
+    report_path.write_text(json.dumps(rep, indent=2))
+    log.info("balance check passed (real = AI in every source and split): %s", rep["per_split"])
+
+
+# ------------------------------------------------------------------------------------------- Kaggle (robust)
+def _is_network_error(e: BaseException) -> bool:
+    """Timeouts / dropped connections / 429 / 5xx - worth retrying. 404, auth errors and local file errors are not."""
+    if isinstance(e, (FileExistsError, FileNotFoundError, PermissionError, IsADirectoryError, NotADirectoryError)):
+        return False
+    status = getattr(getattr(e, "response", None), "status_code", None)
+    if status is not None:
+        return status == 429 or status >= 500
+    return isinstance(e, (TimeoutError, ConnectionError, OSError)) or "timed out" in str(e).lower()
+
+
+def _disable_colab_cache(e: BaseException) -> None:
+    """On Colab, kagglehub first asks Colab's local dataset-cache service (172.28.0.1:8011) to mount the dataset; that
+    service sometimes does not answer (ReadTimeout after 15 s). DISABLE_COLAB_CACHE=1 makes kagglehub download
+    directly from Kaggle instead (needs KAGGLE_USERNAME/KAGGLE_KEY, which the notebook sets). Read on every call."""
+    import os
+    if os.environ.get("DISABLE_COLAB_CACHE") != "1":
+        os.environ["DISABLE_COLAB_CACHE"] = "1"
+        log.warning("Kaggle: Colab's dataset cache did not answer (%s) - downloading directly from Kaggle from now on",
+                    type(e).__name__)
+
+
+def kaggle_retry(fn, what: str, attempts: int = 5):
+    """fn() with retries on network errors (backoff 5, 10, 20, 40 s); the Colab cache is switched off after the first
+    failure. Non-network errors are raised at once; the last network error is raised after `attempts` tries."""
+    for a in range(attempts):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001 - classified below
+            if not _is_network_error(e) or a == attempts - 1:
+                raise
+            _disable_colab_cache(e)
+            wait = min(60, 5 * 2 ** a)
+            log.warning("%s: %s (%s) - retry %d/%d in %d s", what, type(e).__name__, str(e)[:120], a + 1, attempts - 1, wait)
+            time.sleep(wait)
+
+
+def kaggle_download(handle: str, what: str, **kw) -> str:
+    """kagglehub.dataset_download(handle, **kw) that survives Colab-cache timeouts and flaky connections."""
+    import kagglehub
+    return kaggle_retry(lambda: kagglehub.dataset_download(handle, **kw), what)
+
+
 # ------------------------------------------------------------------------------------------- CIFAKE
+CIFAKE_HANDLE = "birdy654/cifake-real-and-ai-generated-synthetic-images"
+
+
 def prepare_cifake(ctx: Ctx, rng: random.Random) -> list[dict]:
     if ctx.args.cifake_root:
         root = Path(ctx.args.cifake_root)
     else:
-        import kagglehub
-        root = Path(kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images"))
+        try:
+            root = Path(kaggle_download(CIFAKE_HANDLE, "CIFAKE download"))
+        except Exception as e:  # noqa: BLE001 - CIFAKE is mandatory: stop with a clear message, not a traceback
+            raise SystemExit(f"CIFAKE: download from Kaggle failed ({type(e).__name__}: {str(e)[:200]}). Check the "
+                             f"KAGGLE_USERNAME / KAGGLE_KEY secrets and the network, then re-run the same cell, or "
+                             f"pass --cifake-root with a downloaded copy.") from e
     log.info("CIFAKE at %s", root)
     n = ctx.prof["cifake_per_class"]
     rows: list[dict] = []
@@ -131,56 +327,195 @@ def prepare_cifake(ctx: Ctx, rng: random.Random) -> list[dict]:
 
 
 # ------------------------------------------------------------------------------------------- ArtiFact
+ARTIFACT_HANDLE = "awsaf49/artifact-dataset"
+
+
+class KaggleFiles:
+    """Download SINGLE files of a Kaggle dataset into a folder on the work disk (Drive on Colab) instead of the whole
+    archive. ArtiFact is tens of GB but we only use a few thousand images: this fetches its metadata.csv files plus
+    exactly the sampled images. Files on Drive survive a new Colab runtime, so they are downloaded once.
+
+    Uses kagglehub's public single-file download (dataset_download(handle, path=..., output_dir=...)) and, to find the
+    sub-dataset folders, the Kaggle file-listing API that kagglehub itself uses. If that API is unavailable the caller
+    falls back to the full download."""
+
+    def __init__(self, handle: str, out: Path):
+        from kagglehub.clients import build_kaggle_client
+        from kagglehub.handle import parse_dataset_handle
+        from kagglehub.http_resolver import _get_current_version
+
+        self.out = out
+        out.mkdir(parents=True, exist_ok=True)
+        with build_kaggle_client() as c:
+            version = _get_current_version(c, parse_dataset_handle(handle))
+        self.handle = f"{handle}/versions/{version}"   # pinned: same files on every resume, no version lookup per file
+
+    def top_level(self) -> tuple[list[str], list[str]]:
+        """(folders, files) at the dataset root."""
+        from kagglehub.clients import build_kaggle_client
+        from kagglehub.handle import parse_dataset_handle
+        from kagglesdk.datasets.types.dataset_api_service import ApiListTreeDatasetFilesRequest
+
+        h = parse_dataset_handle(self.handle)
+        dirs, files, token = [], [], ""
+        with build_kaggle_client() as c:
+            for _ in range(100):
+                r = ApiListTreeDatasetFilesRequest()
+                r.owner_slug, r.dataset_slug, r.dataset_version_number = h.owner, h.dataset, h.version
+                r.path, r.page_size = "", 200
+                if token:
+                    r.page_token = token
+                resp = c.datasets.dataset_api_client.list_tree_dataset_files(r)
+                dirs += [d.relative_url.strip("/") for d in resp.directories]
+                files += [f.relative_url.strip("/") for f in resp.files]
+                token = resp.next_page_token
+                if not token:
+                    break
+        return sorted(dirs), sorted(files)
+
+    def get(self, rel: str) -> Path | None:
+        """Local path of dataset file `rel` (downloaded if needed); None if it does not exist on Kaggle."""
+        import kagglehub
+
+        dest = self.out / rel
+        if dest.is_file() and dest.stat().st_size > 0:
+            return dest
+        for attempt in range(4):
+            try:
+                kagglehub.dataset_download(self.handle, path=rel, output_dir=str(self.out))
+                return dest if dest.is_file() else None
+            except FileExistsError:                    # left by an interrupted run -> replace it
+                try:
+                    kagglehub.dataset_download(self.handle, path=rel, output_dir=str(self.out), force_download=True)
+                    return dest if dest.is_file() else None
+                except Exception:  # noqa: BLE001
+                    return None
+            except Exception as e:  # noqa: BLE001
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                if status == 404:
+                    return None
+                if _is_network_error(e):
+                    _disable_colab_cache(e)            # Colab cache timing out -> go direct for every later file
+                time.sleep(3 * (attempt + 1) * (4 if status == 429 else 1))   # rate limit -> back off longer
+        log.warning("ArtiFact: could not download %s", rel)
+        return None
+
+    def get_many(self, rels: list[str], workers: int = 8) -> list[Path | None]:
+        import logging
+        import os
+        from concurrent.futures import ThreadPoolExecutor
+
+        os.environ.setdefault("TQDM_DISABLE", "1")     # one progress bar per file would flood the Colab output
+        logging.getLogger("kagglehub").setLevel(logging.WARNING)
+        out: list[Path | None] = []
+        with ThreadPoolExecutor(workers) as ex:
+            for i, p in enumerate(ex.map(self.get, rels), 1):
+                out.append(p)
+                if i % 500 == 0:
+                    log.info("ArtiFact: %d / %d files ready", i, len(rels))
+        return out
+
+
+def _artifact_frames(metas: list[Path]) -> list[pd.DataFrame]:
+    # ArtiFact ships one metadata.csv PER SUB-DATASET (afhq/, big_gan/, coco/, ...). Reading only the first one would
+    # use a single folder - often real-only, which balancing then drops entirely. Read and combine all of them.
+    frames = []
+    for meta in metas:
+        m = pd.read_csv(meta)
+        col = lambda *keys: next((c for c in m.columns if any(k in c.lower() for k in keys)), None)  # noqa: E731,B023
+        cpath, clabel, ccat = col("path"), col("target", "label", "class"), col("category", "generator", "model")
+        if not cpath or not clabel:
+            log.warning("ArtiFact: %s has no path/label columns (%s) - skipped", meta, list(m.columns))
+            continue
+        lab = m[clabel]
+        if lab.dtype == object:
+            lab = lab.astype(str).str.lower().map(lambda v: 0 if v in {"real", "0", "factual", "nature"} else 1)
+        frames.append(pd.DataFrame({"_rel": m[cpath].astype(str), "_label": lab.astype(int),
+                                    "_cat": m[ccat].astype(str) if ccat else meta.parent.name, "_base": str(meta.parent)}))
+    return frames
+
+
 def prepare_artifact(ctx: Ctx, rng: random.Random) -> list[dict]:
+    """ArtiFact, limited: only the metadata files and the sampled images are downloaded (into <work>/artifact on
+    Drive), not the whole multi-GB archive. With --artifact-root an already-extracted copy is used instead."""
     n = ctx.prof["artifact_per_class"]
     if not n:
         return []
+    kf: KaggleFiles | None = None
     if ctx.args.artifact_root:
         root = Path(ctx.args.artifact_root)
+        metas = sorted(root.rglob("metadata.csv"))
     else:
-        import kagglehub
-        log.warning("ArtiFact is LARGE (tens of GB). On Colab make sure Drive/disk has room, or pass --artifact-root.")
-        root = Path(kagglehub.dataset_download("awsaf49/artifact-dataset"))
-    metas = sorted(root.rglob("metadata.csv"))
+        root = ctx.work / "artifact"
+        try:
+            kf = kaggle_retry(lambda: KaggleFiles(ARTIFACT_HANDLE, root), "ArtiFact version lookup")
+            dirs, files = kaggle_retry(kf.top_level, "ArtiFact file list")
+            want = (["metadata.csv"] if "metadata.csv" in files else []) + [f"{d}/metadata.csv" for d in dirs]
+            log.info("ArtiFact: %d sub-datasets - downloading only their metadata and the sampled images into %s",
+                     len(dirs), root)
+            metas = [p for p in kf.get_many(want) if p]
+        except Exception as e:  # noqa: BLE001
+            if _is_network_error(e):              # Kaggle unreachable even after retries: ArtiFact is optional
+                log.warning("ArtiFact: Kaggle not reachable (%s: %s) - ArtiFact skipped for this run (training "
+                            "continues; re-run stage 1 with --force later to add it)", type(e).__name__, str(e)[:200])
+                return []
+            # listing API changed / old kagglehub -> full archive (slow, but works)
+            log.warning("ArtiFact: per-file download unavailable (%s: %s) - downloading the FULL archive (tens of GB); "
+                        "update kagglehub (pip install -U kagglehub) or pass --artifact-root to avoid this", type(e).__name__, e)
+            try:
+                kf, root = None, Path(kaggle_download(ARTIFACT_HANDLE, "ArtiFact full download"))
+            except Exception as e2:  # noqa: BLE001
+                log.warning("ArtiFact: full download failed too (%s: %s) - ArtiFact skipped for this run",
+                            type(e2).__name__, str(e2)[:200])
+                return []
+            metas = sorted(root.rglob("metadata.csv"))
     if not metas:
         raise SystemExit(f"ArtiFact: metadata.csv not found under {root}. Look at the folder and adapt prepare_artifact().")
-    df = pd.read_csv(metas[0])
-    log.info("ArtiFact metadata columns: %s", list(df.columns))
-    col = lambda *keys: next((c for c in df.columns if any(k in c.lower() for k in keys)), None)  # noqa: E731
-    cpath, clabel, ccat = col("path"), col("target", "label", "class"), col("category", "generator", "model")
-    if not cpath or not clabel:
-        raise SystemExit(f"ArtiFact: cannot find path/label columns in {list(df.columns)}")
-    lab = df[clabel]
-    if lab.dtype == object:
-        lab = lab.astype(str).str.lower().map(lambda v: 0 if v in {"real", "0", "factual", "nature"} else 1)
-    df = df.assign(_label=lab.astype(int), _cat=df[ccat].astype(str) if ccat else "artifact")
+    frames = _artifact_frames(metas)
+    if not frames:
+        raise SystemExit(f"ArtiFact: no usable metadata.csv under {root} (need path + label columns)")
+    df = pd.concat(frames, ignore_index=True)
+    log.info("ArtiFact: %d metadata files, %d images listed (real %d / AI %d), %d categories", len(frames), len(df),
+             int((df._label == 0).sum()), int((df._label == 1).sum()), df["_cat"].nunique())
 
-    def resolve(rel: str) -> Path | None:
-        for base in (metas[0].parent, root):
-            p = base / rel
-            if p.is_file():
-                return p
-        return None
+    def candidates(rel: str, base: str) -> list[Path]:
+        # metadata paths are relative to their sub-dataset folder or to the dataset root
+        return list(dict.fromkeys([Path(base) / rel, root / rel]))
 
-    probe = [resolve(str(r)) for r in df[cpath].head(5)]
-    if not any(probe):
-        raise SystemExit(f"ArtiFact: image paths from metadata.csv do not exist under {root} (first: {df[cpath].iloc[0]}).")
+    def fetch(pairs: list[tuple[str, str]]) -> list[Path | None]:
+        if kf is None:                                 # local copy: just look the files up
+            return [next((p for p in candidates(r, b) if p.is_file()), None) for r, b in pairs]
+        first = [candidates(r, b)[0] for r, b in pairs]
+        got = kf.get_many([p.relative_to(root).as_posix() for p in first])
+        retry = [i for i, p in enumerate(got) if p is None and len(candidates(*pairs[i])) > 1]
+        if retry:
+            alt = kf.get_many([candidates(*pairs[i])[1].relative_to(root).as_posix() for i in retry])
+            for i, p in zip(retry, alt):
+                got[i] = p
+        return got
+
+    probe = [p for p in fetch(list(zip(df["_rel"].head(3), df["_base"].head(3)))) if p]
+    if not probe:
+        raise SystemExit(f"ArtiFact: image paths from metadata.csv cannot be found (first: {df['_rel'].iloc[0]}).")
     rows: list[dict] = []
     for label in (0, 1):
         sub = df[df["_label"] == label]
         cats = sorted(sub["_cat"].unique())
         per = max(1, n // max(1, len(cats)))
-        picked: list[dict] = []
         for cat in cats:
-            g = sub[sub["_cat"] == cat]
-            for rel in g[cpath].sample(n=min(per, len(g)), random_state=rng.randint(0, 10**6)):
-                p = resolve(str(rel))
-                if p:
-                    picked.append({"path": str(p), "label": label, "source": "ArtiFact", "generator": cat, "split": "train",
-                                   "family": family_of(cat) if label == 1 else None, "attr_ok": True})
-        rows += picked
-    # split by generator group so the same generator appears in every split (near-duplicates across splits are possible
-    # in ArtiFact - that is why the unseen-generator Synthbuster test exists)
+            g = sub[sub["_cat"] == cat].sample(frac=1.0, random_state=rng.randint(0, 10**6))
+            have: list[Path] = []
+            pos = 0
+            while len(have) < per and pos < len(g):    # refill from the same category when a file is missing
+                take = g.iloc[pos:pos + (per - len(have))]
+                pos += len(take)
+                have += [p for p in fetch(list(zip(take["_rel"], take["_base"]))) if p]
+            rows += [{"path": str(p), "label": label, "source": "ArtiFact", "generator": cat, "split": "train",
+                      "family": family_of(cat) if label == 1 else None, "attr_ok": True} for p in have[:per]]
+    log.info("ArtiFact: %d images (real %d / AI %d)", len(rows), sum(r["label"] == 0 for r in rows),
+             sum(r["label"] == 1 for r in rows))
+    # stratified split: the same generator appears in every split (near-duplicates across splits are possible in
+    # ArtiFact - that is why the unseen-generator Synthbuster test exists)
     _split_random(rows, rng)
     return rows
 
@@ -384,7 +719,7 @@ def _download_openfake(ctx: Ctx, root: Path, cap: int) -> None:
     from app.attribution import FAMILY_IDS
 
     config = getattr(ctx.args, "openfake_config", None) or "core"
-    max_min = float(getattr(ctx.args, "openfake_max_minutes", 0) or 120)
+    max_min = float(getattr(ctx.args, "openfake_max_minutes", 0) or 0) or float("inf")   # 0 = no limit
     t0 = time.monotonic()
     deadline = t0 + max_min * 60
     hub = _HubAccess()
@@ -408,7 +743,7 @@ def _download_openfake(ctx: Ctx, root: Path, cap: int) -> None:
     # the surplus AI images and with them the family balance
     quota["real"] = cap * max(1, len(FAMILY_IDS) - 1)
     got = {k: 0 for k in quota}
-    max_bytes = float(getattr(ctx.args, "openfake_max_gb", 0) or 25) * 1e9
+    max_bytes = float(getattr(ctx.args, "openfake_max_gb", 0) or 5) * 1e9
     min_free = float(getattr(ctx.args, "min_free_gb", 0) or 4) * 1e9
     max_scan = int(getattr(ctx.args, "openfake_max_scan", 0) or 600_000)
     stall_limit = 30_000                                           # families absent from OpenFake (e.g. GANs) never fill
@@ -433,6 +768,16 @@ def _download_openfake(ctx: Ctx, root: Path, cap: int) -> None:
             return "real", "real"
         return None, None
 
+    def allowed(fam: str) -> int:
+        """Stratified under the time budget: a family may only fill its quota as fast as the clock runs (10 % at the
+        start, 100 % at ~80 % of the budget), so common families cannot use up the time while rare ones wait. When
+        the budget cuts the download, every family (and the real photos) is at about the same fraction of its quota,
+        as far as OpenFake has the images."""
+        if max_min == float("inf"):
+            return quota[fam]
+        frac = (time.monotonic() - t0) / (max_min * 60)
+        return int(quota[fam] * min(1.0, 0.1 + 1.1 * frac))
+
     for fi, f in enumerate(files):
       if stop:
           break
@@ -453,12 +798,19 @@ def _download_openfake(ctx: Ctx, root: Path, cap: int) -> None:
                     n = len(meta[lab_col])
                     scanned += n
                     picks: dict[int, tuple[str, str]] = {}
+                    taking = {k: 0 for k in got}
+                    paced = False
                     for i in range(n):
                         fam, gen = classify(meta[lab_col][i], meta[mod_col][i])
                         if fam is None:
                             skipped_label += 1
-                        elif got[fam] + sum(1 for v in picks.values() if v[0] == fam) < quota[fam]:
+                        elif got[fam] + taking[fam] < allowed(fam):
                             picks[i] = (fam, gen)
+                            taking[fam] += 1
+                        elif got[fam] + taking[fam] < quota[fam]:
+                            paced = True                   # held back by the pacing, not by the quota
+                    if paced and not picks:
+                        last_saved = scanned               # pacing is not a stall: the family is not exhausted
                     if picks:
                         offset = 0
                         for batch in pf.iter_batches(batch_size=8, row_groups=[rg], columns=[img_col]):
@@ -515,7 +867,9 @@ def _download_openfake(ctx: Ctx, root: Path, cap: int) -> None:
                     elif scanned - last_saved > stall_limit:
                         stop = f"nothing new in the last {stall_limit} rows - remaining families are rare/absent"
                     elif (time.monotonic() - t0) / 60 > max_min:
-                        stop = f"time budget of {max_min:.0f} min reached (--openfake-max-minutes)"
+                        stop = (f"time budget of {max_min:.0f} min reached (--openfake-max-minutes) - stratified: "
+                                f"each family filled to ~{min((got[k] / quota[k] for k in quota if got[k]), default=0) * 100:.0f}"
+                                f"-{max(got[k] / quota[k] for k in quota) * 100:.0f} % of its quota")
                     if stop:
                         break
             fails = 0

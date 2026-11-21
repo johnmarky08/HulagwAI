@@ -24,9 +24,9 @@
         upscaled_for_analysis:
             "Smaller than the model's input size: it was enlarged for analysis, which weakens pixel-level evidence.",
         heavily_compressed:
-            "Heavy JPEG compression hides fine artefacts and weakens the evidence.",
+            "Heavy JPEG compression hides fine artifacts and weakens the evidence.",
         animated_first_frame_only:
-            "Animated image: only the first frame was analysed.",
+            "Animated image: only the first frame was analyzed.",
         no_ml_model:
             "The detection model is not installed on this server, so this result is based on file metadata only.",
         provenance_declares_ai:
@@ -69,7 +69,7 @@
         </div>
     </div>
 
-    <h3 class="mt-6 text-sm font-semibold">Detector scores</h3>
+    <h3 class="mt-6 text-sm font-semibold">Detector Scores</h3>
     {#if detectors.length}
         <ul class="mt-3 space-y-3" aria-label="Score from each detector">
             {#each detectors as d (d.name)}
@@ -103,7 +103,7 @@
     {/if}
 
     {#if findings.length}
-        <h3 class="mt-6 text-sm font-semibold">File & provenance findings</h3>
+        <h3 class="mt-6 text-sm font-semibold">File & Provenance Findings</h3>
         <ul class="mt-3 space-y-2">
             {#each findings as f, i (`${f.id}-${i}`)}
                 <li class="rounded-xl border border-slate-700 bg-slate-950 p-3">
@@ -129,7 +129,7 @@
     {/if}
 
     {#if warnings.length}
-        <h3 class="mt-6 text-sm font-semibold">Quality warnings</h3>
+        <h3 class="mt-6 text-sm font-semibold">Quality Warnings</h3>
         <ul class="mt-2 space-y-1 text-sm text-amber-300">
             {#each warnings as w, i (`${w}-${i}`)}
                 <li>⚠ {warningText[w] ?? w.replaceAll("_", " ")}</li>
@@ -141,7 +141,7 @@
         <details
             class="mt-6 rounded-xl border border-indigo-500 bg-indigo-900/80 p-4 text-xs leading-5 text-indigo-100"
         >
-            <summary class="font-semibold">Intended use & limitations</summary>
+            <summary class="font-semibold">Intended Use & Limitations</summary>
             <p class="mt-2">{notice.intended_use}</p>
             {#if notice.limitations?.length}
                 <ul class="mt-2 list-disc pl-5">

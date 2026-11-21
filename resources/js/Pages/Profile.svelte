@@ -81,7 +81,7 @@
 </script>
 
 <svelte:head>
-    <title>HulagwAI · Your profile</title>
+    <title>HulagwAI · Your Profile</title>
     <meta
         name="description"
         content="Manage your HulagwAI account and saved history."
@@ -94,7 +94,7 @@
     >
         <header class="mb-6">
             <h1 class="text-3xl font-extrabold tracking-tight text-white">
-                Your profile
+                Your Profile
             </h1>
             <p class="mt-2 text-sm text-slate-400">
                 Manage your account and saved history.
@@ -105,13 +105,13 @@
                     class="inline-flex min-h-10 items-center gap-2 rounded-xl border border-indigo-500/50 bg-indigo-950/35 px-4 py-2.5 text-sm font-semibold text-indigo-200 shadow-sm shadow-indigo-950/20 transition hover:border-indigo-400 hover:bg-indigo-900/50 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                     href="/history"
                 >
-                    <span aria-hidden="true">←</span> Back to history
+                    <span aria-hidden="true">←</span> Back to History
                 </a>
                 <button
                     class="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-sm font-semibold text-slate-200 shadow-sm transition hover:border-rose-500/60 hover:bg-rose-950/35 hover:text-rose-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400"
                     onclick={logoutProfile}
                 >
-                    <span aria-hidden="true">↪</span> Log out
+                    <span aria-hidden="true">↪</span> Log Out
                 </button>
             </div>
         </header>
@@ -166,7 +166,7 @@
                 class="mb-6 rounded-2xl border border-slate-800 bg-[#111521] p-6 sm:p-7"
             >
                 <h2 class="text-base font-bold text-slate-100">
-                    Account details
+                    Account Details
                 </h2>
                 <form onsubmit={saveProfile}>
                     <div class="mt-5 grid gap-4 sm:grid-cols-2">
@@ -219,8 +219,8 @@
                             {profile.passwordFormOpen
                                 ? "Cancel"
                                 : hasPassword
-                                  ? "Change password"
-                                  : "Set a password"}
+                                  ? "Change Password"
+                                  : "Set a Password"}
                         </button>
                     </div>
                     <button
@@ -228,7 +228,7 @@
                         type="submit"
                         disabled={profile.saving}
                     >
-                        {profile.saving ? "Saving…" : "Save changes"}
+                        {profile.saving ? "Saving…" : "Save Changes"}
                     </button>
                 </form>
                 {#if profile.passwordFormOpen}
@@ -275,8 +275,8 @@
                                 {profile.changingPassword
                                     ? "Saving…"
                                     : hasPassword
-                                      ? "Update password"
-                                      : "Set password"}
+                                      ? "Update Password"
+                                      : "Set Password"}
                             </button>
                         </div>
                     </form>
@@ -291,7 +291,7 @@
                     id="connected-heading"
                     class="text-base font-bold text-slate-100"
                 >
-                    Connected accounts
+                    Connected Accounts
                 </h2>
                 <p class="mt-1 text-xs text-slate-400">
                     A quicker way to log in to your history.
@@ -353,7 +353,7 @@
                     id="storage-heading"
                     class="text-base font-bold text-slate-100"
                 >
-                    Storage & data
+                    Storage & Data
                 </h2>
                 <p class="mt-1 text-xs text-slate-400">
                     Uploaded images are stored encrypted until you delete them.
@@ -387,13 +387,13 @@
                         type="button"
                         class="rounded-xl border border-slate-700 bg-slate-800/70 px-5 py-3 text-sm text-slate-100 transition hover:border-indigo-400"
                         onclick={() => exportHistory("csv")}
-                        >↓ &nbsp;Export history (CSV)</button
+                        >↓ &nbsp;Export History (CSV)</button
                     >
                     <button
                         type="button"
                         class="rounded-xl border border-slate-700 bg-slate-800/70 px-5 py-3 text-sm text-slate-100 transition hover:border-indigo-400"
                         onclick={() => exportHistory("json")}
-                        >↓ &nbsp;Export history (JSON)</button
+                        >↓ &nbsp;Export History (JSON)</button
                     >
                     <button
                         type="button"
@@ -402,7 +402,7 @@
                         onclick={clearHistory}
                         >{ui.clearingHistory
                             ? "Clearing…"
-                            : "Clear analysis history"}</button
+                            : "Clear Analysis History"}</button
                     >
                 </div>
                 {#if ui.historyError}
@@ -425,7 +425,7 @@
                 >
                     <span class="text-lg text-rose-500" aria-hidden="true"
                         >▤</span
-                    > Delete account
+                    > Delete Account
                 </h2>
                 <p class="mt-4 text-sm leading-6 text-slate-400">
                     Permanently delete your account and all saved analysis
@@ -439,7 +439,7 @@
                             profile.confirmDeleteOpen = true;
                         }}
                     >
-                        Delete account…
+                        Delete Account…
                     </button>
                 {:else}
                     <form
@@ -465,7 +465,7 @@
                             disabled={profile.deleting}
                             >{profile.deleting
                                 ? "Deleting…"
-                                : "Permanently delete"}</button
+                                : "Permanently Delete"}</button
                         >
                         <button
                             type="button"
@@ -480,7 +480,7 @@
             </section>
         {:else}
             <p class="py-16 text-center text-sm text-slate-400">
-                Sign in to view your account.
+                Log in to view your account.
             </p>
         {/if}
     </main>

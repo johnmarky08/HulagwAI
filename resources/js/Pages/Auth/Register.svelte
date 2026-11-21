@@ -9,7 +9,7 @@
     } from "../../official/authPages.svelte.js";
 </script>
 
-<svelte:head><title>HulagwAI · Create account</title></svelte:head>
+<svelte:head><title>HulagwAI · Create Account</title></svelte:head>
 <Layout active="">
     <main class="grid min-h-[calc(100vh-80px)] place-items-center px-5 py-12">
         <div class="w-full max-w-[480px]">
@@ -17,7 +17,7 @@
                 class="rounded-2xl border border-slate-800 bg-slate-900/70 p-7 shadow-2xl shadow-black/20 sm:p-8"
             >
                 <h1 class="text-3xl font-extrabold tracking-tight">
-                    Save your analysis history
+                    Save Your Analysis History
                 </h1>
                 <p class="mt-2 text-sm text-slate-400">
                     Create a free account to keep your results in one place.
@@ -97,7 +97,7 @@
                         disabled={form.busy}
                         >{form.busy
                             ? "Creating account…"
-                            : "Create account"}</button
+                            : "Create Account"}</button
                     >
                 </form>
                 <p class="mt-4 text-center text-xs leading-5 text-slate-500">

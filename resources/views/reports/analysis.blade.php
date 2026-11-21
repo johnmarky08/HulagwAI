@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>HulagwAI analysis report</title>
+<title>HulagwAI Analysis Report</title>
 <style>
   @page { margin: 22mm 16mm 18mm 16mm; }
   body { font-family: DejaVu Sans, sans-serif; font-size: 9.5pt; color: #1b1f2a; }
@@ -34,10 +34,11 @@
   $t   = $metrics['test'] ?? null;
 @endphp
 
-<h1>HulagwAI — Image analysis report</h1>
+@php $section = 0; @endphp
+<h1>HulagwAI — Image Analysis Report</h1>
 <div class="muted">Report for analysis {{ $rec['id'] }} · generated {{ $generatedAt }}</div>
 
-<h2>1. Verdict</h2>
+<h2>{{ ++$section }}. Verdict</h2>
 <table><tr>
   <td style="width:34%; border:none">
     @if($image)<img src="{{ $image }}" style="max-width: 100%; max-height: 190px; border-radius: 4px">@endif
@@ -59,12 +60,12 @@
   $ev = (array) ($full['result']['evidence'] ?? []);
   $am = $metrics['attribution'] ?? null;
 @endphp
-<h2>2a. Likely generator</h2>
+<h2>{{ ++$section }}. Likely Generator</h2>
 @if(!empty($attr['available']))
   <p><b>{{ $attr['headline'] }}</b>
   <span class="muted">({{ ($attr['source'] ?? 'model') === 'metadata' ? 'named in the file itself' : 'estimated by the attribution model' }})</span></p>
   <table><tr><th>Candidate family</th><th class="num">Probability</th></tr>
-  @foreach($attr['top'] as $cand)
+  @foreach($attr['top'] ?? [] as $cand)
     <tr><td>{{ $cand['label'] }}</td><td class="num">{{ $cand['percent'] }}%</td></tr>
   @endforeach</table>
   @if(!empty($attr['note']))<p class="muted">{{ $attr['note'] }}</p>@endif
@@ -73,7 +74,7 @@
 @endif
 <p class="muted">{{ $attr['disclaimer'] ?? config('hulagwai.notice.attribution') }}</p>
 
-<h2>2b. Why it may look AI-generated</h2>
+<h2>{{ ++$section }}. Why It May Look AI-Generated</h2>
 @if(count($ev['flags'] ?? []))
   <table><tr><th style="width:14%">Strength</th><th style="width:20%">Category</th><th>Observation</th></tr>
   @foreach($ev['flags'] as $fl)
@@ -83,12 +84,12 @@
   <p class="muted">No specific signals stood out for this image.</p>
 @endif
 @if($heatmap)
-  <p class="muted" style="margin-bottom:2px">Detector heat map: warmer colours mark patches the pixel-level detector scores as more AI-like.</p>
+  <p class="muted" style="margin-bottom:2px">Detector heat map: warmer colors mark patches the pixel-level detector scores as more AI-like.</p>
   <img src="{{ $heatmap }}" style="max-width: 62%; border-radius: 4px">
 @endif
 <p class="muted">{{ $ev['note'] ?? config('hulagwai.notice.evidence') }}</p>
 
-<h2>2. File</h2>
+<h2>{{ ++$section }}. File</h2>
 <table>
   <tr><th style="width:26%">File name</th><td>{{ $f['filename'] }}</td></tr>
   <tr><th>Format / size</th><td>{{ $f['format'] }} · {{ number_format($f['size_bytes'] / 1024, 1) }} KB ({{ $f['size_mb'] }} MB)</td></tr>
@@ -97,7 +98,7 @@
   <tr><th>Analyzed on</th><td>{{ $rec['analyzed_at'] }}</td></tr>
 </table>
 
-<h2>3. Model components for this image</h2>
+<h2>{{ ++$section }}. Model Components for This Image</h2>
 @php $comp = (array) ($details['components'] ?? []); @endphp
 @if(count($comp))
 <table>
@@ -114,7 +115,7 @@
   <p class="muted">No ML components ran for this image (the decision came from provenance metadata or the ML model was not installed).</p>
 @endif
 
-<h2>4. Metadata &amp; provenance findings</h2>
+<h2>{{ ++$section }}. Metadata &amp; Provenance Findings</h2>
 @php $fi = (array) ($details['metadata']['findings'] ?? []); @endphp
 @if(count($fi))
 <table>
@@ -131,11 +132,11 @@
 @endif
 
 @if(!empty($details['warnings']))
-<h2>5. Quality warnings</h2>
+<h2>{{ ++$section }}. Quality Warnings</h2>
 <ul>@foreach($details['warnings'] as $w)<li>{{ str_replace('_', ' ', $w) }}</li>@endforeach</ul>
 @endif
 
-<h2>6. Model &amp; evaluation metrics</h2>
+<h2>{{ ++$section }}. Model &amp; Evaluation Metrics</h2>
 @if($model)
 <table>
   <tr><th style="width:26%">Model</th><td>{{ $model->name }} v{{ $model->version }}</td></tr>
@@ -160,7 +161,7 @@
 </table>
 
 @if(isset($t['confusion']))
-<h2>Confusion matrix (test split)</h2>
+<h2>Confusion Matrix (Test Split)</h2>
 <table class="cm" style="width:60%">
   <tr><th></th><th>Predicted real</th><th>Predicted AI</th></tr>
   <tr><th>Actually real</th><td>{{ number_format($t['confusion']['tn']) }} <div class="muted">TN</div></td><td>{{ number_format($t['confusion']['fp']) }} <div class="muted">FP</div></td></tr>
@@ -169,7 +170,7 @@
 @endif
 
 @if(!empty($metrics['selective']))
-<h2>Three-way verdict behaviour</h2>
+<h2>Three-Way Verdict Behavior</h2>
 <table>
   <tr><th>Coverage (decided)</th><th>Accuracy when decided</th><th>Inconclusive rate</th></tr>
   <tr><td>{{ $pct($metrics['selective']['coverage'] ?? null, 1) }}</td><td>{{ $pct($metrics['selective']['accuracy_decided'] ?? null, 2) }}</td><td>{{ $pct($metrics['selective']['inconclusive_rate'] ?? null, 1) }}</td></tr>
@@ -177,7 +178,7 @@
 @endif
 
 @if(!empty($metrics['comparison']['rows']))
-<h2>Model comparison (baselines vs final model)</h2>
+<h2>Model Comparison (Baselines vs. Final Model)</h2>
 <table><tr><th>Model</th><th>Type</th><th class="num">Accuracy</th><th class="num">Recall</th><th class="num">F1</th><th class="num">ROC-AUC (test)</th><th class="num">ROC-AUC (val)</th></tr>
 @foreach($metrics['comparison']['rows'] as $c)
   <tr><td>{{ $c['name'] }}@if(($c['family'] ?? '') === 'final') <b>(selected)</b>@endif</td><td>{{ $c['family'] ?? '' }}</td><td class="num">{{ $pct($c['accuracy'] ?? null) }}</td><td class="num">{{ $pct($c['recall'] ?? null) }}</td><td class="num">{{ $n4($c['f1'] ?? null) }}</td><td class="num">{{ $n4($c['roc_auc'] ?? null) }}</td><td class="num">{{ $n4($c['val_roc_auc'] ?? null) }}</td></tr>
@@ -190,7 +191,7 @@
 @endif
 
 @if(!empty($metrics['errors']['by_resolution']))
-<h2>Error analysis by image size</h2>
+<h2>Error Analysis by Image Size</h2>
 <table><tr><th>Image size</th><th class="num">Images</th><th class="num">Accuracy</th></tr>
 @foreach($metrics['errors']['by_resolution'] as $k => $v)
   <tr><td>{{ $k }}</td><td class="num">{{ number_format($v['n'] ?? 0) }}</td><td class="num">{{ $pct($v['accuracy'] ?? null) }}</td></tr>
@@ -199,7 +200,7 @@
 @endif
 
 @if(!empty($am['test']))
-<h2>Generator-attribution model (held-out test)</h2>
+<h2>Generator-Attribution Model (Held-Out Test)</h2>
 <p class="muted">Closed set of {{ count($am['families'] ?? []) }} generator families; chance level {{ $pct($am['test']['chance_level'] ?? null) }}. Answers "unknown" below confidence τ = {{ $am['tau'] ?? '—' }}.</p>
 <table>
   <tr><th>Accuracy</th><th>Top-3 accuracy</th><th>Macro-F1</th><th>Coverage (answered)</th><th>Accuracy when answered</th><th>ECE</th></tr>
@@ -213,7 +214,7 @@
 @endif
 
 @if(!empty($metrics['per_source']))
-<h2>Per dataset</h2>
+<h2>Per Dataset</h2>
 <table><tr><th>Dataset</th><th class="num">Images</th><th class="num">Accuracy</th><th class="num">Recall</th><th class="num">Specificity</th><th class="num">ROC-AUC</th></tr>
 @foreach($metrics['per_source'] as $name => $m)
   <tr><td>{{ $name }}</td><td class="num">{{ number_format($m['n'] ?? 0) }}</td><td class="num">{{ $pct($m['accuracy'] ?? null) }}</td><td class="num">{{ $pct($m['recall'] ?? null) }}</td><td class="num">{{ $pct($m['specificity'] ?? null) }}</td><td class="num">{{ $n4($m['roc_auc'] ?? null) }}</td></tr>
@@ -221,7 +222,7 @@
 @endif
 
 @if(!empty($metrics['per_generator']))
-<h2>Detection rate per generator (recall)</h2>
+<h2>Detection Rate per Generator (Recall)</h2>
 <table><tr><th>Generator</th><th class="num">Images</th><th class="num">Recall</th></tr>
 @foreach($metrics['per_generator'] as $name => $m)
   <tr><td>{{ $name }}</td><td class="num">{{ number_format($m['n'] ?? 0) }}</td><td class="num">{{ $pct($m['recall'] ?? null) }}</td></tr>
@@ -229,14 +230,14 @@
 @endif
 
 @if(!empty($metrics['ood']))
-<h2>Unseen-generator test (out-of-distribution)</h2>
+<h2>Unseen-Generator Test (Out-of-Distribution)</h2>
 <p class="muted">{{ $metrics['ood']['name'] ?? 'OOD set' }} — images from generators the model never saw in training.</p>
 <table><tr><th>Fake images</th><th class="num">Recall</th><th>Real images</th><th class="num">Specificity</th></tr>
 <tr><td>{{ number_format($metrics['ood']['n_fake'] ?? 0) }}</td><td class="num">{{ $pct($metrics['ood']['recall'] ?? null) }}</td><td>{{ isset($metrics['ood']['n_real']) ? number_format($metrics['ood']['n_real']) : 'not supplied' }}</td><td class="num">{{ $pct($metrics['ood']['specificity'] ?? null) }}</td></tr></table>
 @endif
 
 @if(!empty($metrics['robustness']))
-<h2>Robustness (accuracy after common transformations)</h2>
+<h2>Robustness (Accuracy After Common Transformations)</h2>
 <table><tr><th>Transformation</th><th class="num">Accuracy</th></tr>
 @foreach($metrics['robustness'] as $name => $m)
   <tr><td>{{ str_replace('_', ' ', $name) }}</td><td class="num">{{ $pct($m['accuracy'] ?? null) }}</td></tr>
@@ -244,7 +245,7 @@
 @endif
 
 @if(!empty($metrics['datasets']))
-<h2>Training &amp; evaluation datasets</h2>
+<h2>Training &amp; Evaluation Datasets</h2>
 <table><tr><th>Dataset</th><th>Role</th><th>Source</th></tr>
 @foreach($metrics['datasets'] as $d)
   <tr><td>{{ $d['name'] ?? '' }}</td><td>{{ $d['role'] ?? '' }}</td><td class="mono">{{ $d['url'] ?? '' }}</td></tr>
@@ -254,7 +255,7 @@
 <div class="box"><b>Model has not been evaluated yet.</b> Metrics such as accuracy, precision, recall, F1, ROC-AUC and MAE belong to the <i>model</i>, not to a single image, and are produced by <span class="mono">ml-service/training/07_evaluate.py</span> after training. Until the bundle containing <span class="mono">metrics.json</span> is installed this section stays empty rather than showing placeholder numbers.</div>
 @endif
 
-<h2>Intended use, limitations &amp; responsible use</h2>
+<h2>Intended Use, Limitations &amp; Responsible Use</h2>
 <p><b>Intended use.</b> {{ config('hulagwai.notice.intended_use') }}</p>
 <ul>@foreach(config('hulagwai.notice.limitations') as $l)<li>{{ $l }}</li>@endforeach</ul>
 <p><b>Responsible use.</b></p>

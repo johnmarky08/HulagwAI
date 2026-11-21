@@ -8,11 +8,14 @@
         sampleImage,
         loadRecent,
         formatDate,
+        clearError,
     } from "../official/controller.svelte.js";
     import { openQuickDetection } from "../official/dashboard.js";
     import { session } from "../api/session.svelte.js";
 
     onMount(() => {
+        // An error left over from the Detection page would otherwise show under Quick Image Detection.
+        clearError();
         void loadRecent();
     });
 
@@ -134,12 +137,12 @@
                 <div class="relative z-10 max-w-2xl">
                     <span
                         class="rounded-full border border-indigo-400/50 bg-indigo-400/15 px-3 py-1 text-xs font-medium text-indigo-200"
-                        >Image authenticity workspace</span
+                        >Image Authenticity Workspace</span
                     >
                     <h1
                         class="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl"
                     >
-                        Detect AI-generated media with clarity
+                        Detect AI-Generated Media with Clarity
                     </h1>
                     <p
                         class="dashboard-banner-text mt-3 max-w-xl text-sm leading-6 text-indigo-100/80"
@@ -152,13 +155,13 @@
                             use:inertia
                             href="/detect"
                             class="rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-50"
-                            >✦ &nbsp;Start new analysis</a
+                            >✦ &nbsp;Start New Analysis</a
                         >
                         <a
                             use:inertia
                             href="/history"
                             class="rounded-xl border border-white/20 bg-slate-950/20 px-5 py-3 text-sm font-semibold transition hover:bg-white/10"
-                            >View history</a
+                            >View History</a
                         >
                     </div>
                 </div>
@@ -222,7 +225,7 @@
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <h2 class="text-xl font-bold">
-                                Recent analysis history
+                                Recent Analysis History
                             </h2>
                             <p class="mt-1 text-xs text-slate-400">
                                 Your latest saved results
@@ -232,7 +235,7 @@
                             use:inertia
                             href="/history"
                             class="rounded-lg border border-indigo-500/50 px-3 py-2 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/15"
-                            >View all</a
+                            >View All</a
                         >
                     </div>
                     <div class="overflow-x-auto">
@@ -242,7 +245,7 @@
                             >
                                 <tr>
                                     <th class="p-3 font-semibold"
-                                        >Image / filename</th
+                                        >Image / Filename</th
                                     >
                                     <th class="p-3 font-semibold">Result</th>
                                     <th class="p-3 font-semibold">Confidence</th
@@ -343,7 +346,7 @@
                     <section
                         class="rounded-2xl border border-indigo-500/40 bg-slate-900/70 p-5 sm:p-6"
                     >
-                        <h2 class="text-lg font-bold">Result breakdown</h2>
+                        <h2 class="text-lg font-bold">Result Breakdown</h2>
                         <div class="mt-5 flex items-center gap-6">
                             <div
                                 class="grid size-32 shrink-0 place-items-center rounded-full"
@@ -394,7 +397,7 @@
                                 aria-hidden="true">⬆</span
                             >
                             <span class="text-sm font-bold text-slate-100"
-                                >Quick image detection</span
+                                >Quick Image Detection</span
                             >
                             <span class="text-[11px] text-slate-400"
                                 >JPG, PNG, or WEBP · max 5 MB</span
@@ -447,7 +450,7 @@
                     <div
                         class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
                     >
-                        <h3 class="font-semibold">A note on results</h3>
+                        <h3 class="font-semibold">A Note on Results</h3>
                         <p class="mt-2 text-xs leading-5 text-slate-400">
                             These are model predictions, not proof of image
                             origin. Review the confidence and context before

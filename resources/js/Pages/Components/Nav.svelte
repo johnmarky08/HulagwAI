@@ -17,7 +17,7 @@
             ? "Account"
             : me.authenticated
               ? me.user?.name || "Account"
-              : "Log in",
+              : "Log In",
     );
     let accountHref = $derived(
         me === undefined || me.authenticated ? "/profile" : "/login",

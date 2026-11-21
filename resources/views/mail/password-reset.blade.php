@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark light">
     <meta name="supported-color-schemes" content="dark light">
-    <title>Reset your HulagwAI password</title>
+    <title>Reset Your HulagwAI Password</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0a0c13;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e2e8f0;">
     {{-- Preheader (inbox preview text) --}}
@@ -39,7 +39,7 @@
                                 <tr>
                                     <td style="padding:32px 32px 8px;">
                                         <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#818cf8;">Password reset</p>
-                                        <h1 style="margin:0;font-size:26px;line-height:1.25;font-weight:800;color:#ffffff;">Choose a new password</h1>
+                                        <h1 style="margin:0;font-size:26px;line-height:1.25;font-weight:800;color:#ffffff;">Choose a New Password</h1>
                                         <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
                                             Hi {{ $name }}, we received a request to reset the password for your HulagwAI account.
                                             Click the button below to choose a new one.

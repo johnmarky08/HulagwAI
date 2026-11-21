@@ -8,7 +8,7 @@ from app.detectors import fusion
 from training import members_eval as ME
 from training.augment import degrade
 from training import metrics as M
-from training.common import done, load_manifest, log, parse, save_json
+from training.common import done, drop_cache, load_manifest, log, parse, save_json
 
 
 def pick_thresholds(y, p, target=0.97):
@@ -41,8 +41,9 @@ def main() -> None:
     # Two views of every validation image: as stored, and re-compressed/resized like a typical upload. Fitting the
     # fusion on both stops it from trusting a member that only works on pristine files.
     seed = ctx.args.seed + 17
-    z_clean = ME.compute_logits(ctx, paths, members)
-    z_deg = ME.compute_logits(ctx, paths, members, transform=lambda img, i: degrade(img, random.Random(seed + i)))
+    z_clean = ME.compute_logits(ctx, paths, members, cache="val_clean")
+    z_deg = ME.compute_logits(ctx, paths, members, transform=lambda img, i: degrade(img, random.Random(seed + i)),
+                              cache="val_degraded")
     z, y, src = np.vstack([z_clean, z_deg]), np.concatenate([labels, labels]), np.concatenate([srcs, srcs])
     ok = ~np.isnan(z).any(1)
     z, y, src = z[ok], y[ok], src[ok]
@@ -62,6 +63,7 @@ def main() -> None:
     log.info("fusion %s | val AUC %.4f (clean+degraded, %d sources) | thresholds %s", cfg, M.roc_auc(y, p), len(cnt), th)
     save_json(out, {"fusion": cfg, "thresholds": {**{k: th[k] for k in ("real_max", "ai_min")}, "disagreement_max": 0.35},
                     "val_auc": M.roc_auc(y, p), "val_coverage": th["coverage"]})
+    drop_cache(ctx, "logits_val_clean", "logits_val_degraded")   # val_logits.npz keeps them for stage 7
 
 
 if __name__ == "__main__":

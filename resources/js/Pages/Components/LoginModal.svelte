@@ -58,10 +58,10 @@
             id="login-dialog-title"
             class="mt-4 text-2xl font-extrabold text-white"
         >
-            Log in to HulagwAI
+            Log In to HulagwAI
         </h2>
         <p class="mt-2 pr-5 text-sm leading-6 text-slate-400">
-            Sign in to save your scans and revisit your analysis history.
+            Log in to save your scans and revisit your analysis history.
         </p>
 
         <div class="mt-6">
@@ -125,7 +125,7 @@
             <button
                 class="w-full rounded-xl bg-indigo-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
                 disabled={form.busy}
-                >{form.busy ? "Logging in…" : "Log in"}</button
+                >{form.busy ? "Logging in…" : "Log In"}</button
             >
         </form>
         <p class="mt-5 text-center text-sm text-slate-400">
