@@ -1,6 +1,7 @@
 <script>
     import { inertia } from "@inertiajs/svelte";
     import { navigation, footerLinks } from "../../official/navigation.js";
+    import logo from "../../../images/hulagwai-logo.png";
 </script>
 
 <footer class="theme-footer border-t border-indigo-500/50 bg-[#111521]">
@@ -12,7 +13,7 @@
                 use:inertia
                 class="flex items-center gap-3 text-xl font-extrabold"
                 href="/"
-                ><span class="text-cyan-300">◉</span><span
+                ><img src={logo} alt="" class="size-9 object-contain" /><span
                     >Hulagw<span class="text-indigo-400">AI</span></span
                 ></a
             >

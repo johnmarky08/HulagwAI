@@ -6,6 +6,7 @@
     import { session, refreshSession } from "../../api/session.svelte.js";
     import moonIcon from "../../../images/moon.svg";
     import sunIcon from "../../../images/sun.svg";
+    import logo from "../../../images/hulagwai-logo.png";
     import { ui, toggleTheme } from "../../official/controller.svelte.js";
 
     let { active = "home" } = $props();
@@ -63,10 +64,7 @@
             href="/"
             aria-label="HulagwAI home"
         >
-            <span
-                class="grid size-8 place-items-center rounded-full border border-cyan-400 text-cyan-300"
-                >◉</span
-            >
+            <img src={logo} alt="" class="size-9 object-contain" />
             <span>Hulagw<span class="text-indigo-400">AI</span></span>
         </a>
 
