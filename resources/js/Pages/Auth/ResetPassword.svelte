@@ -53,7 +53,7 @@
                         {form.message}
                         <a
                             use:inertia
-                            class="font-semibold underline underline-offset-2"
+                            class="font-semibold underline underline-offset-2 py-2.5 -my-2.5 sm:py-0 sm:my-0"
                             href="/login">Log in</a
                         >
                     </p>

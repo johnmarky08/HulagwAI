@@ -118,7 +118,7 @@
             <div class="text-right">
                 <a
                     use:inertia
-                    class="text-xs text-indigo-300 underline-offset-4 hover:underline"
+                    class="text-xs text-indigo-300 underline-offset-4 hover:underline py-2.5 -my-2.5 sm:py-0 sm:my-0"
                     href="/forgot-password">Forgot password?</a
                 >
             </div>

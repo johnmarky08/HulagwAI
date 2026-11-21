@@ -80,7 +80,7 @@
                     <div class="text-right">
                         <a
                             use:inertia
-                            class="text-xs text-indigo-300 underline-offset-4 hover:underline"
+                            class="text-xs text-indigo-300 underline-offset-4 hover:underline py-2.5 -my-2.5 sm:py-0 sm:my-0"
                             href="/forgot-password">Forgot password?</a
                         >
                     </div>
@@ -93,7 +93,7 @@
                 <p class="mt-6 text-center text-sm text-slate-400">
                     New to HulagwAI? <a
                         use:inertia
-                        class="font-semibold text-white underline decoration-indigo-400 underline-offset-4 hover:text-indigo-300"
+                        class="font-semibold text-white underline decoration-indigo-400 underline-offset-4 hover:text-indigo-300 py-2.5 -my-2.5 sm:py-0 sm:my-0"
                         href="/register">Sign up</a
                     >
                 </p>
@@ -101,7 +101,7 @@
             <div class="mt-6 text-center">
                 <a
                     use:inertia
-                    class="text-sm text-slate-400 underline underline-offset-4 transition hover:text-indigo-300"
+                    class="text-sm text-slate-400 underline underline-offset-4 transition hover:text-indigo-300 py-2.5 -my-2.5 sm:py-0 sm:my-0"
                     href="/detect">Continue without an account</a
                 >
                 <p class="mt-2 text-xs text-slate-500">

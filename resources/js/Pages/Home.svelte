@@ -113,14 +113,14 @@
                 <div
                     class="hero-confidence absolute right-0 top-7 flex flex-col rounded-xl bg-white px-4 py-3 text-slate-900 shadow-lg"
                 >
-                    <small class="text-[9px] font-semibold text-slate-500"
+                    <small class="text-[10px] font-semibold text-slate-500"
                         >MODEL CONFIDENCE</small
                     ><strong class="text-sm">87%</strong>
                 </div>
                 <div
                     class="hero-verdict absolute bottom-7 left-0 flex flex-col rounded-xl bg-white px-4 py-3 text-slate-900 shadow-lg"
                 >
-                    <small class="text-[9px] font-semibold text-slate-500"
+                    <small class="text-[10px] font-semibold text-slate-500"
                         >PREDICTION · SAMPLE</small
                     ><strong class="text-xs text-rose-500"
                         >Likely AI-Generated</strong

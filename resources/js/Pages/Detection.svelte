@@ -182,7 +182,7 @@
                 ><span
                     class="mt-5 inline-flex rounded-xl bg-linear-to-br from-indigo-500 to-indigo-700 px-8 py-4 font-semibold text-white"
                     ><Icon name="upload" class="mr-2 self-center" />Upload Image</span
-                ><span class="mt-5 flex gap-1 text-[9px] text-slate-400"
+                ><span class="mt-5 flex gap-1 text-[10px] text-slate-400"
                     ><i
                         class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
                         >JPG</i

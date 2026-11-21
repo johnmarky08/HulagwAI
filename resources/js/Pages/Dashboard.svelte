@@ -274,7 +274,7 @@
                                         >
                                             No saved analyses yet. <a
                                                 use:inertia
-                                                class="text-indigo-300 underline"
+                                                class="text-indigo-300 underline py-2.5 -my-2.5 sm:py-0 sm:my-0"
                                                 href="/detect"
                                                 >Analyze an image</a
                                             > to get started.
@@ -450,7 +450,7 @@
                                 Delete analyses from
                                 <a
                                     use:inertia
-                                    class="text-indigo-300 underline"
+                                    class="text-indigo-300 underline py-2.5 -my-2.5 sm:py-0 sm:my-0"
                                     href="/history">History</a
                                 > to free space.
                             </p>

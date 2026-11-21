@@ -27,11 +27,11 @@
             aria-label="Footer navigation"
         >
             {#each [...navigation, ...footerLinks] as item (item.id)}
-                <a use:inertia class="hover:text-indigo-300" href={item.href}
+                <a use:inertia class="inline-flex min-h-9 items-center hover:text-indigo-300 sm:min-h-0" href={item.href}
                     >{item.label}</a
                 >
             {/each}
-            <a use:inertia class="hover:text-indigo-300" href="/#how-it-works"
+            <a use:inertia class="inline-flex min-h-9 items-center hover:text-indigo-300 sm:min-h-0" href="/#how-it-works"
                 >How It Works</a
             >
         </nav>

@@ -374,14 +374,14 @@
                         aria-label="History pages"
                     >
                         <button
-                            class="text-white disabled:opacity-40"
+                            class="inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-white disabled:opacity-40 sm:min-h-0 sm:min-w-0 sm:px-0"
                             disabled={ui.meta.page <= 1 || ui.loadingHistory}
                             onclick={previousHistoryPage}>‹ Previous</button
                         >{#each pageList as page (page)}{#if typeof page === "string"}<span
                                     class="px-1 text-slate-500"
                                     aria-hidden="true">…</span
                                 >{:else}<button
-                                    class={`px-1 ${ui.meta.page === page ? "font-bold text-indigo-400" : "text-white"}`}
+                                    class={`inline-flex min-h-11 min-w-11 items-center justify-center px-1 sm:min-h-0 sm:min-w-0 ${ui.meta.page === page ? "font-bold text-indigo-400" : "text-white"}`}
                                     aria-current={ui.meta.page === page
                                         ? "page"
                                         : undefined}
@@ -390,7 +390,7 @@
                                     disabled={ui.loadingHistory}
                                     onclick={handleHistoryPage}>{page}</button
                                 >{/if}{/each}<button
-                            class="text-white disabled:opacity-40"
+                            class="inline-flex min-h-11 min-w-11 items-center justify-center px-2 text-white disabled:opacity-40 sm:min-h-0 sm:min-w-0 sm:px-0"
                             disabled={ui.meta.page >= ui.meta.last_page ||
                                 ui.loadingHistory}
                             onclick={nextHistoryPage}>Next ›</button
