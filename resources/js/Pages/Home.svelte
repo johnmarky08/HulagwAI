@@ -38,9 +38,9 @@
 </svelte:head>
 
 <Layout active="home">
-    <main class="mx-auto max-w-[1440px]">
+    <main class="mx-auto max-w-360">
         <section
-            class="scroll-reveal grid min-h-[470px] items-center gap-8 px-6 py-16 sm:py-20 md:grid-cols-2 md:px-10 lg:min-h-[485px] lg:px-16 lg:py-32"
+            class="scroll-reveal grid min-h-117.5 items-center gap-8 px-6 py-16 sm:py-20 md:grid-cols-2 md:px-10 lg:min-h-121.25 lg:px-16 lg:py-[25vh]"
         >
             <div>
                 <p
@@ -69,7 +69,8 @@
                         <a
                             use:inertia
                             class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
-                            href="/detect"><Icon name="upload" /> Analyze Image</a
+                            href="/detect"
+                            ><Icon name="upload" /> Analyze Image</a
                         >
                     {:else if session.value === undefined}
                         <span
@@ -80,7 +81,8 @@
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
-                            onclick={openLogin}><Icon name="log-in" /> Log In</button
+                            onclick={openLogin}
+                            ><Icon name="log-in" /> Log In</button
                         >
                     {/if}
                     <a
@@ -90,14 +92,14 @@
                 </div>
             </div>
             <div
-                class="hero-art relative mx-auto grid h-[320px] w-full max-w-xl place-items-center"
+                class="hero-art relative mx-auto grid h-80 w-full max-w-xl place-items-center"
                 aria-label="Illustration of an image being analyzed"
             >
                 <div
                     class="hero-glow absolute h-56 w-72 rounded-full bg-indigo-600/30 blur-3xl"
                 ></div>
                 <div
-                    class="hero-image relative h-52 w-80 -rotate-2 rounded-3xl bg-linear-to-br from-violet-500 via-indigo-800 to-blue-950 p-2 shadow-[0_0_45px_#5145e899] sm:w-[390px]"
+                    class="hero-image relative h-52 w-80 -rotate-2 rounded-3xl bg-linear-to-br from-violet-500 via-indigo-800 to-blue-950 p-2 shadow-[0_0_45px_#5145e899] sm:w-97.5"
                 >
                     <div
                         class="relative h-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_72%_28%,#ffd68e_0,#d89b8a_13%,transparent_29%),radial-gradient(circle_at_27%_75%,#3e63dd_0,#4d59d2_25%,transparent_47%),linear-gradient(130deg,#555bd4,#141a4c_78%)]"
@@ -239,11 +241,7 @@
                 </h2>
             </div>
             <div class="grid gap-5 md:grid-cols-3">
-                {#each [
-                    { number: "01", name: "Joshua Bartolome", role: "Frontend Developer", description: "Builds the upload experience, result views, and responsive interface.", img: josh }, 
-                    { number: "02", name: "John Marky Natividad", role: "Backend Developer", description: "Connects analysis requests, stores results, and supports analysis history.", img: marky }, 
-                    { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project.", img: nico }] 
-                    as developer}
+                {#each [{ number: "01", name: "Joshua Bartolome", role: "Frontend Developer", description: "Builds the upload experience, result views, and responsive interface.", img: josh }, { number: "02", name: "John Marky Natividad", role: "Backend Developer", description: "Connects analysis requests, stores results, and supports analysis history.", img: marky }, { number: "03", name: "Nico Gabriel Domingo", role: "Project Designer", description: "Designs and develops intuitive user interfaces, visual layouts, and user experiences for the project.", img: nico }] as developer}
                     <article
                         class="rounded-2xl border border-indigo-500/40 bg-slate-900 p-6"
                     >
