@@ -3,6 +3,7 @@
     import { inertia } from "@inertiajs/svelte";
     import Layout from "./Components/Layout.svelte";
     import LoginGate from "./Components/LoginGate.svelte";
+    import Icon from "./Components/Icon.svelte";
     import {
         ui,
         sampleImage,
@@ -23,7 +24,10 @@
     const quota = $derived(session.value?.quota ?? null);
     const quotaShare = $derived(
         quota?.limit_bytes
-            ? Math.min(100, Math.round((quota.used_bytes / quota.limit_bytes) * 100))
+            ? Math.min(
+                  100,
+                  Math.round((quota.used_bytes / quota.limit_bytes) * 100),
+              )
             : 0,
     );
 
@@ -54,28 +58,28 @@
         {
             label: "Total images analyzed",
             key: "total",
-            icon: "▧",
+            icon: "images",
             tone: "indigo",
             caption: "Processed analyses",
         },
         {
             label: "Likely real images",
             key: "likely_real",
-            icon: "◉",
+            icon: "shield-check",
             tone: "emerald",
             caption: "Likely authentic",
         },
         {
             label: "AI-generated images",
             key: "ai_generated",
-            icon: "✳",
+            icon: "bot",
             tone: "rose",
             caption: "Likely synthetic",
         },
         {
             label: "Inconclusive / mixed",
             key: "inconclusive",
-            icon: "⚠",
+            icon: "triangle-alert",
             tone: "amber",
             caption: "Needs human review",
         },
@@ -129,7 +133,7 @@
 <Layout active="dashboard">
     <LoginGate>
         <main
-            class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 py-9 md:px-8"
+            class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 py-10 sm:px-8 md:py-12"
         >
             <section
                 class="dashboard-banner group relative mb-8 overflow-hidden rounded-2xl border border-indigo-500/70 bg-linear-to-r from-indigo-950 to-indigo-800 px-7 py-8 shadow-xl shadow-indigo-950/30 md:px-10"
@@ -155,7 +159,7 @@
                             use:inertia
                             href="/detect"
                             class="rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-50"
-                            >✦ &nbsp;Start New Analysis</a
+                            ><Icon name="sparkles" class="mr-1.5" />Start New Analysis</a
                         >
                         <a
                             use:inertia
@@ -169,7 +173,7 @@
                     class="banner-mark pointer-events-none absolute -right-3 -top-10 hidden text-[220px] leading-none text-indigo-300/15 md:block"
                     aria-hidden="true"
                 >
-                    ◉
+                    <Icon name="scan-eye" strokeWidth={1.25} />
                 </div>
             </section>
 
@@ -202,7 +206,7 @@
                             >
                             <span
                                 class="grid size-10 place-items-center rounded-xl border text-lg {tone.chip}"
-                                aria-hidden="true">{card.icon}</span
+                                aria-hidden="true"><Icon name={card.icon} /></span
                             >
                         </div>
                         <strong
@@ -239,7 +243,7 @@
                         >
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-560px text-left text-sm">
+                        <table class="w-full min-w-[560px] text-left text-sm">
                             <thead
                                 class="border-b border-slate-700 text-[11px] uppercase tracking-[.12em] text-slate-400"
                             >
@@ -296,14 +300,14 @@
                                                         alt=""
                                                     />
                                                     <span
-                                                        class="max-w-180px truncate font-medium"
+                                                        class="max-w-[180px] truncate font-medium"
                                                         >{row.filename}</span
                                                     >
                                                 </a>
                                             </td>
                                             <td class="p-3">
                                                 <span
-                                                    class="rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+                                                    class="rounded-full whitespace-nowrap border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
                                                     class:border-emerald-800={row.verdict ===
                                                         "real"}
                                                     class:bg-emerald-950={row.verdict ===
@@ -394,7 +398,7 @@
                         >
                             <span
                                 class="grid size-9 place-items-center rounded-full bg-indigo-500/20 text-indigo-200"
-                                aria-hidden="true">⬆</span
+                                aria-hidden="true"><Icon name="upload" /></span
                             >
                             <span class="text-sm font-bold text-slate-100"
                                 >Quick Image Detection</span
@@ -420,9 +424,12 @@
                             class="rounded-2xl border border-indigo-500/40 bg-slate-900/70 p-5 sm:p-6"
                             aria-label="Storage used"
                         >
-                            <div class="flex items-baseline justify-between gap-3">
+                            <div
+                                class="flex items-baseline justify-between gap-3"
+                            >
                                 <h2 class="text-lg font-bold">Storage</h2>
-                                <span class="text-xs tabular-nums text-slate-400"
+                                <span
+                                    class="text-xs tabular-nums text-slate-400"
                                     >{mb(quota.used_bytes)} / {mb(
                                         quota.limit_bytes,
                                     )} MB</span
@@ -441,8 +448,10 @@
                             <p class="mt-2 text-xs text-slate-400">
                                 {mb(quota.remaining_bytes)} MB left for stored images.
                                 Delete analyses from
-                                <a use:inertia class="text-indigo-300 underline" href="/history"
-                                    >History</a
+                                <a
+                                    use:inertia
+                                    class="text-indigo-300 underline"
+                                    href="/history">History</a
                                 > to free space.
                             </p>
                         </section>

@@ -1,6 +1,7 @@
 <script>
     import { inertia } from "@inertiajs/svelte";
     import Layout from "./Components/Layout.svelte";
+    import Icon from "./Components/Icon.svelte";
     import {
         ui,
         removeFile,
@@ -60,7 +61,7 @@
 <svelte:head><title>HulagwAI · Image Detection</title></svelte:head>
 
 <Layout active="detect">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-20 sm:px-8">
         <div class="scroll-reveal mx-auto mb-8 mt-10 max-w-3xl text-center">
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
@@ -102,7 +103,7 @@
                         class:text-slate-950={isComplete}
                         class:bg-slate-400={!isComplete}
                         class:text-slate-900={!isComplete}
-                        >{isComplete ? "✓" : index + 1}</span
+                        >{#if isComplete}<Icon name="check" strokeWidth={3} />{:else}{index + 1}{/if}</span
                     >
 
                     <span 
@@ -116,16 +117,16 @@
 
         {#if serviceWarning && ui.phase === "upload"}
             <p
-                class="mx-auto mb-6 w-2/3 rounded-xl border border-amber-700 bg-amber-950/30 p-4 text-sm text-amber-300"
+                class="mx-auto mb-6 w-full max-w-3xl rounded-xl border border-amber-700 bg-amber-950/30 p-4 text-sm text-amber-300"
                 role="status"
             >
-                ⚠ &nbsp;{serviceWarning}
+                <Icon name="triangle-alert" class="mr-1.5" />{serviceWarning}
             </p>
         {/if}
 
         {#if ui.error}
             <section
-                class="mx-auto flex min-h-480px w-2/3 flex-col items-center justify-center rounded-2xl border border-rose-500/70 bg-slate-900/95 px-6 py-12 text-center shadow-xl shadow-rose-950/20"
+                class="mx-auto flex min-h-[480px] w-full max-w-3xl flex-col items-center justify-center rounded-2xl border border-rose-500/70 bg-slate-900/95 px-6 py-12 text-center shadow-xl shadow-rose-950/20"
                 role="alert"
             >
                 <div
@@ -145,7 +146,7 @@
                 </p>
                 <button
                     class="mt-6 rounded-xl border border-indigo-400/50 bg-linear-to-br from-indigo-500 to-indigo-700 px-8 py-3.5 font-semibold text-white shadow-lg shadow-indigo-950/30 transition hover:from-indigo-400 hover:to-indigo-600"
-                    onclick={clearError}>↑ &nbsp; Try Again</button
+                    onclick={clearError}><Icon name="rotate-ccw" class="mr-1.5" />Try Again</button
                 >
                 <div class="mt-6 flex flex-wrap justify-center gap-1.5 text-[10px] text-slate-400">
                     <span class="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-1">JPG</span>
@@ -157,11 +158,11 @@
             </section>
         {:else if ui.phase === "upload" && !ui.file}
             <label
-                class="align-center place-self-center w-2/3 upload-dropzone scroll-reveal 
-                flex min-h-420px cursor-pointer flex-col items-center 
+                class="mx-auto w-full max-w-3xl upload-dropzone scroll-reveal 
+                flex min-h-[420px] cursor-pointer flex-col items-center 
                 justify-center rounded-2xl border border-dashed 
                 border-indigo-500 bg-indigo-950/40 px-6 py-12 text-center transition 
-                hover:bg-indigo-950/70 sm:min-h-590px"
+                hover:bg-indigo-950/70 sm:min-h-[590px]"
                 ondragover={allowDrop}
                 ondrop={handleFileDrop}
             >
@@ -173,14 +174,14 @@
                 />
                 <span
                     class="mb-4 grid size-16 place-items-center rounded-2xl bg-linear-to-br from-indigo-400 to-indigo-700 text-4xl text-white shadow-lg shadow-indigo-500/40"
-                    >⇧</span
+                    ><Icon name="upload" /></span
                 ><strong class="text-2xl font-bold sm:text-3xl"
                     >Drag and drop an image here</strong
                 ><span class="mt-2 text-sm text-slate-500"
                     >or paste one from your clipboard</span
                 ><span
                     class="mt-5 inline-flex rounded-xl bg-linear-to-br from-indigo-500 to-indigo-700 px-8 py-4 font-semibold text-white"
-                    >⇧ &nbsp; Upload Image</span
+                    ><Icon name="upload" class="mr-2 self-center" />Upload Image</span
                 ><span class="mt-5 flex gap-1 text-[9px] text-slate-400"
                     ><i
                         class="upload-chip rounded bg-slate-800 px-2 py-1 not-italic"
@@ -213,7 +214,7 @@
                 class="upload-selected scroll-reveal rounded-2xl border border-indigo-500 bg-indigo-950/40 p-4 shadow-xl shadow-indigo-950/40 sm:p-6"
             >
                 <img
-                    class="upload-preview max-h-440px w-full rounded-xl bg-slate-950 object-contain"
+                    class="upload-preview max-h-[440px] w-full rounded-xl bg-slate-950 object-contain"
                     src={ui.preview}
                     alt="Selected upload preview"
                 />
@@ -233,10 +234,10 @@
                 <div class="flex flex-wrap gap-3">
                     <button
                         class="rounded-xl border border-indigo-500 bg-indigo-700 px-5 py-3 font-semibold text-white"
-                        onclick={startAnalysis}>⌗ &nbsp; Image Detection</button
+                        onclick={startAnalysis}><Icon name="scan-search" class="mr-1.5" />Image Detection</button
                     ><label
                         class="cursor-pointer rounded-xl border border-indigo-500 bg-slate-800 px-5 py-3 font-semibold text-white"
-                        >⟳ &nbsp; Replace Image<input
+                        ><Icon name="refresh-cw" class="mr-1.5" />Replace Image<input
                             class="sr-only"
                             type="file"
                             accept=".jpg,.jpeg,.png,.webp"
@@ -244,7 +245,7 @@
                         /></label
                     ><button
                         class="rounded-xl border border-red-500 bg-rose-950 px-5 py-3 font-semibold text-white"
-                        onclick={removeFile}>▤ &nbsp; Remove</button
+                        onclick={removeFile}><Icon name="trash-2" class="mr-1.5" />Remove</button
                     >
                 </div>
             </section>
@@ -273,7 +274,7 @@
                                     ? "Loading the saved analysis"
                                     : "Image preview unavailable"}
                             >
-                                ▧
+                                <Icon name="image" strokeWidth={1.5} />
                             </div>
                         {/if}
                         <div
@@ -333,12 +334,14 @@
                                 class:text-indigo-400={step.state ===
                                     "in_progress"}
                             >
-                                <span
-                                    >{step.state === "complete"
-                                        ? "✓"
-                                        : step.state === "in_progress"
-                                          ? "◉"
-                                          : "○"} &nbsp; {step.label}</span
+                                <span class="inline-flex items-center gap-2"
+                                    >{#if step.state === "complete"}<Icon
+                                            name="circle-check"
+                                        />{:else if step.state === "in_progress"}<Icon
+                                            name="loader-circle"
+                                            class="animate-spin"
+                                        />{:else}<Icon name="circle" />{/if}
+                                    {step.label}</span
                                 ><span class="text-slate-400"
                                     >{step.state.replaceAll("_", " ")}</span
                                 >
@@ -397,7 +400,7 @@
                     class="flex flex-col items-center rounded-2xl border border-indigo-500/40 bg-slate-900 p-6 text-center"
                 >
                     <span class="text-xs font-bold text-emerald-400"
-                        >✓ ANALYSIS COMPLETE</span
+                        ><Icon name="circle-check" class="mr-1" />ANALYSIS COMPLETE</span
                     ><span
                         class={`mt-4 rounded-full border px-6 py-2 text-sm ${tone.pill}`}
                         >{ui.verdictLabel}</span
@@ -450,7 +453,7 @@
                             type="button"
                             class="rounded-xl border border-indigo-500 bg-indigo-800 px-4 py-3 text-sm font-semibold text-white"
                             onclick={removeFile}
-                            >↑ &nbsp; Analyze Another</button
+                            ><Icon name="image-plus" class="mr-1.5" />Analyze Another</button
                         ><a
                             use:inertia
                             class="rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
@@ -458,7 +461,7 @@
                         >{#if ui.reportUrl}<a
                                 class="rounded-xl border border-indigo-500 px-4 py-3 text-sm text-indigo-300"
                                 href={ui.reportUrl}
-                                download>↓ &nbsp;Download Report (PDF)</a
+                                download><Icon name="download" class="mr-1.5" />Download Report (PDF)</a
                             >{/if}
                     </div>
                 </article>

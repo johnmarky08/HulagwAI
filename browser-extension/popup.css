@@ -317,6 +317,10 @@ input[type="text"]:focus {
     font-weight: 650;
     cursor: pointer;
 }
+.text-button .btn-icon {
+    margin-right: 4px;
+    vertical-align: -2px;
+}
 .text-button:hover {
     background: rgb(99 102 241 / 22%);
     color: #fff;

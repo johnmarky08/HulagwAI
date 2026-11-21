@@ -4,6 +4,7 @@
   Uses the same card classes as the other result cards so the light theme overrides in app.css apply.
 -->
 <script>
+    import Icon from "../Icon.svelte";
     let {
         components = {},
         findings = [],
@@ -132,7 +133,7 @@
         <h3 class="mt-6 text-sm font-semibold">Quality Warnings</h3>
         <ul class="mt-2 space-y-1 text-sm text-amber-300">
             {#each warnings as w, i (`${w}-${i}`)}
-                <li>⚠ {warningText[w] ?? w.replaceAll("_", " ")}</li>
+                <li class="flex items-start gap-2"><Icon name="triangle-alert" class="mt-0.5" /><span>{warningText[w] ?? w.replaceAll("_", " ")}</span></li>
             {/each}
         </ul>
     {/if}

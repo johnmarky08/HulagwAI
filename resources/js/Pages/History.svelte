@@ -17,6 +17,7 @@
         formatDate,
     } from "../official/controller.svelte.js";
     import LoginGate from "./Components/LoginGate.svelte";
+    import Icon from "./Components/Icon.svelte";
 
     // Compact pager: first, last and the pages around the current one ("…" for gaps).
     const pageList = $derived.by(() => {
@@ -36,7 +37,7 @@
 <svelte:head><title>HulagwAI · Analysis History</title></svelte:head>
 
 <Layout active="history">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-20 sm:px-8">
         <div
             class="mx-auto mb-8 mt-7 max-w-3xl text-left sm:mt-10 sm:text-center"
         >
@@ -54,7 +55,7 @@
                 class="mb-7 grid grid-cols-2 gap-4 lg:grid-cols-4"
                 aria-label="Analysis summary"
             >
-                {#each [{ label: "Total analyses", value: ui.stats.total, tone: "indigo", icon: "▧", caption: "Processed analyses" }, { label: "Likely real", value: ui.stats.likely_real, tone: "emerald", icon: "◉", caption: "Likely authentic" }, { label: "AI-generated", value: ui.stats.ai_generated, tone: "rose", icon: "✳", caption: "Likely synthetic" }, { label: "Inconclusive", value: ui.stats.inconclusive, tone: "amber", icon: "⚠", caption: "Needs human review" }] as card (card.label)}
+                {#each [{ label: "Total analyses", value: ui.stats.total, tone: "indigo", icon: "images", caption: "Processed analyses" }, { label: "Likely real", value: ui.stats.likely_real, tone: "emerald", icon: "shield-check", caption: "Likely authentic" }, { label: "AI-generated", value: ui.stats.ai_generated, tone: "rose", icon: "bot", caption: "Likely synthetic" }, { label: "Inconclusive", value: ui.stats.inconclusive, tone: "amber", icon: "triangle-alert", caption: "Needs human review" }] as card (card.label)}
                     <article
                         class="history-stat group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 transition duration-300 hover:-translate-y-1 hover:border-slate-700 hover:shadow-xl hover:shadow-indigo-950/30 sm:p-5"
                         data-tone={card.tone}
@@ -70,7 +71,7 @@
                             >
                             <span
                                 class="grid size-8 shrink-0 place-items-center rounded-xl border text-sm chip sm:size-9 sm:text-base"
-                                aria-hidden="true">{card.icon}</span
+                                aria-hidden="true"><Icon name={card.icon} /></span
                             >
                         </div>
                         <strong
@@ -88,7 +89,7 @@
             >
                 <label
                     class="col-span-2 flex h-12 items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 md:col-span-1"
-                    ><span class="text-xl text-slate-400">⌕</span><input
+                    ><span class="text-xl text-slate-400"><Icon name="search" /></span><input
                         class="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
                         placeholder="Search by filename"
                         value={ui.search}
@@ -146,13 +147,13 @@
                             type="button"
                             class="h-10 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-4 text-xs font-semibold disabled:opacity-50"
                             onclick={() => exportHistory("csv")}
-                            disabled={!ui.stats.total}>↓ &nbsp;Export CSV</button
+                            disabled={!ui.stats.total}><Icon name="download" class="mr-1.5" />Export CSV</button
                         >
                         <button
                             type="button"
                             class="h-10 rounded-xl border border-slate-700 bg-linear-to-r from-slate-900 to-slate-700 px-4 text-xs font-semibold disabled:opacity-50"
                             onclick={() => exportHistory("json")}
-                            disabled={!ui.stats.total}>↓ &nbsp;Export JSON</button
+                            disabled={!ui.stats.total}><Icon name="download" class="mr-1.5" />Export JSON</button
                         >
                         <button
                             type="button"
@@ -167,7 +168,7 @@
                 </div>
                 <div class="mt-4 hidden overflow-x-auto md:block">
                     <table
-                        class="w-full min-w-740px border-collapse text-left text-sm"
+                        class="w-full min-w-[740px] border-collapse text-left text-sm"
                     >
                         <thead class="text-xs text-slate-400"
                             ><tr

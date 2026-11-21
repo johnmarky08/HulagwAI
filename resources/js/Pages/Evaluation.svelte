@@ -2,6 +2,7 @@
 <script>
     import { onMount } from "svelte";
     import Layout from "./Components/Layout.svelte";
+    import Icon from "./Components/Icon.svelte";
     import { model } from "../api/model";
     import { errorMessage } from "../api/client";
 
@@ -39,7 +40,7 @@
 <svelte:head><title>HulagwAI · Model Evaluation</title></svelte:head>
 
 <Layout active="evaluation">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-20 sm:px-8">
         <div class="mx-auto mb-8 mt-10 max-w-3xl text-center">
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
@@ -100,12 +101,18 @@
             </aside>
 
             <section class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-                {#each [["Accuracy", pct(t.accuracy, 2)], ["Precision", pct(t.precision, 2)], ["Recall", pct(t.recall, 2)], ["Specificity", pct(t.specificity, 2)], ["F1", num(t.f1)], ["ROC-AUC", num(t.roc_auc)], ["MAE", num(t.mae)], ["RMSE", num(t.rmse)]] as [k, v]}
+                {#each [["Accuracy", pct(t.accuracy, 2), "target"], ["Precision", pct(t.precision, 2), "crosshair"], ["Recall", pct(t.recall, 2), "scan-search"], ["Specificity", pct(t.specificity, 2), "shield-check"], ["F1", num(t.f1), "scale"], ["ROC-AUC", num(t.roc_auc), "trending-up"], ["MAE", num(t.mae), "ruler"], ["RMSE", num(t.rmse), "sigma"]] as [k, v, icon]}
                     <div
-                        class="rounded-2xl border border-slate-700 bg-slate-900 p-5"
+                        class="rounded-2xl border border-slate-700 bg-slate-900 p-4 sm:p-5"
                     >
+                        <div class="flex items-start justify-between gap-2">
                         <p class="text-sm text-slate-400">{k}</p>
-                        <p class="mt-2 text-3xl font-extrabold">{v}</p>
+                        <span
+                            class="grid size-9 shrink-0 place-items-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300"
+                            aria-hidden="true"><Icon name={icon} size="1.1em" /></span
+                        >
+                        </div>
+                        <p class="mt-2 text-2xl font-extrabold sm:text-3xl">{v}</p>
                     </div>
                 {/each}
             </section>
@@ -114,12 +121,18 @@
                 class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4"
                 aria-label="Probability quality"
             >
-                {#each [["Balanced accuracy", pct(t.balanced_accuracy, 2)], ["MCC", num(t.mcc)], ["Average precision", num(t.average_precision)], ["MSE", num(t.mse)], ["Brier score", num(t.brier)], ["Log-loss", num(t.log_loss)], ["ECE (calibration)", num(t.ece)], ["False-positive rate", pct(t.fpr, 2)]] as [k, v]}
+                {#each [["Balanced accuracy", pct(t.balanced_accuracy, 2), "scale"], ["MCC", num(t.mcc), "activity"], ["Average precision", num(t.average_precision), "chart-column"], ["MSE", num(t.mse), "sigma"], ["Brier score", num(t.brier), "gauge"], ["Log-loss", num(t.log_loss), "trending-down"], ["ECE (calibration)", num(t.ece), "sliders-horizontal"], ["False-positive rate", pct(t.fpr, 2), "triangle-alert"]] as [k, v, icon]}
                     <div
-                        class="rounded-2xl border border-slate-700 bg-slate-900 p-5"
+                        class="rounded-2xl border border-slate-700 bg-slate-900 p-4 sm:p-5"
                     >
+                        <div class="flex items-start justify-between gap-2">
                         <p class="text-sm text-slate-400">{k}</p>
-                        <p class="mt-2 text-2xl font-extrabold">{v}</p>
+                        <span
+                            class="grid size-9 shrink-0 place-items-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300"
+                            aria-hidden="true"><Icon name={icon} size="1.1em" /></span
+                        >
+                        </div>
+                        <p class="mt-2 text-xl font-extrabold sm:text-2xl">{v}</p>
                     </div>
                 {/each}
             </section>
@@ -276,11 +289,17 @@
                         )}%.
                     </p>
                     <div class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-                        {#each [["Accuracy", pct(a.test.accuracy)], ["Top-3 accuracy", pct(a.test.top3_accuracy)], ["Answered", pct(a.test.coverage)], ["Accuracy when answered", pct(a.test.accuracy_when_accepted)]] as [k, v]}
+                        {#each [["Accuracy", pct(a.test.accuracy), "target"], ["Top-3 accuracy", pct(a.test.top3_accuracy), "list-ordered"], ["Answered", pct(a.test.coverage), "circle-help"], ["Accuracy when answered", pct(a.test.accuracy_when_accepted), "circle-check"]] as [k, v, icon]}
                             <div
                                 class="rounded-xl border border-slate-700 bg-slate-950 p-4"
                             >
+                                <div class="flex items-start justify-between gap-2">
                                 <p class="text-xs text-slate-400">{k}</p>
+                                <span
+                            class="grid size-8 shrink-0 place-items-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300"
+                            aria-hidden="true"><Icon name={icon} size="1.1em" /></span
+                        >
+                                </div>
                                 <p class="mt-1 text-2xl font-bold">{v}</p>
                             </div>
                         {/each}
@@ -325,14 +344,20 @@
                                 {pct(m.selective.ai_min, 0)} are reported as Inconclusive
                                 instead of forcing an answer.
                             </p>
-                            <div class="mt-4 grid grid-cols-3 gap-3">
-                                {#each [["Answered", pct(m.selective.coverage)], ["Inconclusive", pct(m.selective.inconclusive_rate)], ["Accuracy when answered", pct(m.selective.accuracy_decided)]] as [k, v]}
+                            <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                                {#each [["Answered", pct(m.selective.coverage), "circle-help"], ["Inconclusive", pct(m.selective.inconclusive_rate), "triangle-alert"], ["Accuracy when answered", pct(m.selective.accuracy_decided), "circle-check"]] as [k, v, icon]}
                                     <div
                                         class="rounded-xl border border-slate-700 bg-slate-950 p-4"
                                     >
+                                        <div class="flex items-start justify-between gap-2">
                                         <p class="text-xs text-slate-400">
                                             {k}
                                         </p>
+                                        <span
+                            class="grid size-8 shrink-0 place-items-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300"
+                            aria-hidden="true"><Icon name={icon} size="1.1em" /></span
+                        >
+                                        </div>
                                         <p class="mt-1 text-xl font-bold">
                                             {v}
                                         </p>

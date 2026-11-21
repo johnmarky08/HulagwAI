@@ -3,6 +3,7 @@
     import { onMount } from "svelte";
     import { inertia } from "@inertiajs/svelte";
     import Layout from "./Components/Layout.svelte";
+    import Icon from "./Components/Icon.svelte";
     import { model } from "../api/model";
 
     let data = $state(null);
@@ -22,22 +23,22 @@
 
     const features = [
         {
-            icon: "⌗",
+            icon: "scan-search",
             title: "Real vs. AI Prediction",
             text: "Each image gets a verdict (likely real, likely AI-generated, or inconclusive), an AI-likelihood score and a confidence level.",
         },
         {
-            icon: "⬡",
+            icon: "cpu",
             title: "Likely Generator",
             text: "For images judged AI-generated, the model estimates which family of generator made it, or answers “unknown” when unsure.",
         },
         {
-            icon: "▦",
+            icon: "layers",
             title: "Evidence & Heat Map",
             text: "Detector signals, file provenance findings and a heat map of where the pixel-level detector reacts most strongly.",
         },
         {
-            icon: "◷",
+            icon: "history",
             title: "History & Reports",
             text: "Signed-in users can search, filter, export and delete past analyses, and download a PDF report for any result.",
         },
@@ -76,7 +77,7 @@
 </svelte:head>
 
 <Layout active="about">
-    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-16">
+    <main class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 pb-20 sm:px-8">
         <div class="scroll-reveal mx-auto mb-10 mt-10 max-w-3xl text-center">
             <h1
                 class="bg-linear-to-r from-violet-200 to-indigo-500 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl"
@@ -100,7 +101,7 @@
                 >
                     <span
                         class="mx-auto grid size-11 place-items-center rounded-xl bg-indigo-500 text-xl text-white"
-                        aria-hidden="true">{feature.icon}</span
+                        aria-hidden="true"><Icon name={feature.icon} /></span
                     >
                     <h2 class="mt-4 text-sm font-semibold">{feature.title}</h2>
                     <p class="mt-2 text-xs leading-5 text-slate-400">

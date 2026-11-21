@@ -2,6 +2,7 @@
     import { inertia } from "@inertiajs/svelte";
     import { onMount } from "svelte";
     import { fly } from "svelte/transition";
+    import Icon from "./Icon.svelte";
     import { navigation } from "../../official/navigation.js";
     import { session, refreshSession } from "../../api/session.svelte.js";
     import moonIcon from "../../../images/moon.svg";
@@ -52,15 +53,15 @@
 </script>
 
 <header
-    class="theme-header sticky top-0 z-50 border-b border-indigo-500/70 bg-[#111521] px-5 md:px-10"
+    class="theme-header sticky top-0 z-50 border-b border-indigo-500/70 bg-[#111521] px-4 sm:px-6 lg:px-8 xl:px-10"
 >
     <div
-        class="font-bold mx-auto flex min-h-76px max-w-1440px items-center gap-5 md:min-h-20"
+        class="font-bold mx-auto flex min-h-[72px] max-w-[1440px] items-center gap-3 py-3 sm:gap-4 lg:min-h-20 lg:py-4 xl:gap-5"
     >
         <a
             use:inertia
             onclick={closeMenu}
-            class="flex shrink-0 items-center gap-3 font-sans text-xl font-extrabold tracking-tight md:text-2xl"
+            class="flex shrink-0 items-center gap-2.5 font-sans text-xl font-extrabold tracking-tight sm:gap-3 xl:text-2xl"
             href="/"
             aria-label="HulagwAI home"
         >
@@ -69,7 +70,7 @@
         </a>
 
         <nav
-            class="nav-links font-bold mx-auto hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto overflow-y-hidden md:flex"
+            class="nav-links font-bold mx-auto hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto overflow-y-hidden lg:flex xl:gap-1"
             aria-label="Main navigation"
         >
             {#each navigation as item}
@@ -77,7 +78,7 @@
                     use:inertia
                     href={item.href}
                     aria-current={active === item.id ? "page" : undefined}
-                    class="nav-link inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-3 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white lg:min-w-28 xl:px-5"
+                    class="nav-link inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent px-3 py-3.5 text-sm text-slate-400 transition-all duration-300 ease-in-out hover:text-white xl:px-4 2xl:min-w-28 2xl:px-5"
                     >{item.label}</a
                 >
             {/each}
@@ -87,12 +88,15 @@
             use:inertia
             href={accountHref}
             title={me?.authenticated ? me.user?.name : accountLabel}
-            class="hidden max-w-48 shrink-0 items-center truncate rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2 text-sm font-medium transition hover:border-indigo-400 hover:bg-indigo-950/70 md:inline-flex"
-            >♙ &nbsp;{accountLabel}</a
+            aria-label={accountLabel}
+            class="hidden size-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 text-sm font-medium transition hover:border-indigo-400 hover:bg-indigo-950/70 lg:inline-flex xl:size-auto xl:max-w-48 xl:px-4 xl:py-2.5"
+            ><Icon name="user" size="1.1em" /><span class="hidden truncate xl:inline"
+                >{accountLabel}</span
+            ></a
         >
 
         <button
-            class="theme-toggle hidden size-11 shrink-0 items-center justify-center rounded-full md:flex"
+            class="theme-toggle hidden size-11 shrink-0 items-center justify-center rounded-full lg:flex"
             onclick={toggleTheme}
             aria-label={ui.light
                 ? "Switch to dark mode"
@@ -112,7 +116,7 @@
         </button>
 
         <button
-            class="menu-toggle ml-auto grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-slate-100 md:hidden"
+            class="menu-toggle ml-auto grid size-11 shrink-0 place-items-center rounded-lg text-2xl text-slate-100 lg:hidden"
             type="button"
             aria-label={menuOpen
                 ? "Close navigation menu"
@@ -133,9 +137,12 @@
         <div
             id="mobile-main-menu"
             transition:fly={flyTransition(-14, 220)}
-            class=" font-bold mobile-menu absolute inset-x-0 top-full z-50 border-b border-indigo-500/40 bg-[#111521] px-5 pb-5 pt-3 shadow-2xl md:hidden"
+            class="font-bold mobile-menu absolute inset-x-0 top-full z-50 border-b border-indigo-500/40 bg-[#111521] px-4 pb-6 pt-4 shadow-2xl sm:px-6 lg:hidden"
         >
-            <nav class="grid gap-1" aria-label="Mobile navigation">
+            <nav
+                class="mx-auto grid max-w-[1440px] gap-1.5 sm:grid-cols-2 sm:gap-2"
+                aria-label="Mobile navigation"
+            >
                 {#each navigation as item, index}
                     <a
                         use:inertia
@@ -143,24 +150,26 @@
                         aria-current={active === item.id ? "page" : undefined}
                         onclick={closeMenu}
                         transition:fly={flyTransition(-7, 190, 25 + index * 32)}
-                        class="mobile-nav-link rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-indigo-500/10 hover:text-white"
+                        class="mobile-nav-link rounded-xl px-4 py-3.5 text-sm font-medium text-slate-300 transition hover:bg-indigo-500/10 hover:text-white"
                         >{item.label}</a
                     >
                 {/each}
             </nav>
             <div
-                class="mt-4 flex items-center justify-between border-t border-slate-700 pt-4"
+                class="mx-auto mt-5 flex max-w-[1440px] items-center justify-between gap-3 border-t border-slate-700 pt-5"
             >
                 <a
                     use:inertia
                     href={accountHref}
                     onclick={closeMenu}
                     title={me?.authenticated ? me.user?.name : accountLabel}
-                    class="max-w-48 truncate rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm font-medium text-slate-100"
-                    >♙ &nbsp;{accountLabel}</a
+                    class="inline-flex min-w-0 max-w-[60%] items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 text-sm font-medium text-slate-100"
+                    ><Icon name="user" /><span class="truncate"
+                        >{accountLabel}</span
+                    ></a
                 >
                 <button
-                    class="flex items-center gap-3 rounded-xl px-3 py-2"
+                    class="flex shrink-0 items-center gap-3 rounded-xl px-3 py-2"
                     onclick={toggleTheme}
                     aria-label={ui.light
                         ? "Switch to dark mode"

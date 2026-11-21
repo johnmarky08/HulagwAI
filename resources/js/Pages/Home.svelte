@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { inertia } from "@inertiajs/svelte";
     import Layout from "./Components/Layout.svelte";
+    import Icon from "./Components/Icon.svelte";
     import LoginModal from "./Components/LoginModal.svelte";
     import TechStackCarousel from "./Components/TechStackCarousel.svelte";
     import { session, refreshSession } from "../api/session.svelte.js";
@@ -37,9 +38,9 @@
 </svelte:head>
 
 <Layout active="home">
-    <main class="mx-auto max-w-1440px">
+    <main class="mx-auto max-w-[1440px]">
         <section
-            class="scroll-reveal grid min-h-470px items-center gap-8 px-6 py-44 md:grid-cols-2 md:px-16 lg:min-h-485px"
+            class="scroll-reveal grid min-h-[470px] items-center gap-8 px-6 py-16 sm:py-20 md:grid-cols-2 md:px-10 lg:min-h-[485px] lg:px-16 lg:py-32"
         >
             <div>
                 <p
@@ -68,7 +69,7 @@
                         <a
                             use:inertia
                             class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
-                            href="/detect"><span>↑</span> Analyze Image</a
+                            href="/detect"><Icon name="upload" /> Analyze Image</a
                         >
                     {:else if session.value === undefined}
                         <span
@@ -79,7 +80,7 @@
                         <button
                             type="button"
                             class="inline-flex items-center gap-2 rounded-xl border border-indigo-500 bg-linear-to-br from-indigo-900 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 transition hover:brightness-125"
-                            onclick={openLogin}><span>♙</span> Log In</button
+                            onclick={openLogin}><Icon name="log-in" /> Log In</button
                         >
                     {/if}
                     <a
@@ -89,14 +90,14 @@
                 </div>
             </div>
             <div
-                class="hero-art relative mx-auto grid h-320px w-full max-w-xl place-items-center"
+                class="hero-art relative mx-auto grid h-[320px] w-full max-w-xl place-items-center"
                 aria-label="Illustration of an image being analyzed"
             >
                 <div
                     class="hero-glow absolute h-56 w-72 rounded-full bg-indigo-600/30 blur-3xl"
                 ></div>
                 <div
-                    class="hero-image relative h-52 w-80 -rotate-2 rounded-3xl bg-linear-to-br from-violet-500 via-indigo-800 to-blue-950 p-2 shadow-[0_0_45px_#5145e899] sm:w-390px"
+                    class="hero-image relative h-52 w-80 -rotate-2 rounded-3xl bg-linear-to-br from-violet-500 via-indigo-800 to-blue-950 p-2 shadow-[0_0_45px_#5145e899] sm:w-[390px]"
                 >
                     <div
                         class="relative h-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_72%_28%,#ffd68e_0,#d89b8a_13%,transparent_29%),radial-gradient(circle_at_27%_75%,#3e63dd_0,#4d59d2_25%,transparent_47%),linear-gradient(130deg,#555bd4,#141a4c_78%)]"
@@ -128,7 +129,7 @@
 
         <section
             id="how-it-works"
-            class="scroll-reveal border-t border-indigo-500/60 px-6 py-12 md:px-16"
+            class="scroll-reveal border-t border-indigo-500/60 px-6 py-16 md:px-10 md:py-20 lg:px-16"
         >
             <div class="mb-8 text-center">
                 <h2
@@ -141,7 +142,7 @@
                 </p>
             </div>
             <div class="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
-                {#each [{ n: "01", icon: "↑", title: "Upload an Image", text: "Drag and drop, or browse for a JPG, PNG, or WEBP file." }, { n: "02", icon: "⌗", title: "AI-Powered Analysis", text: "The model examines image characteristics and patterns." }, { n: "03", icon: "✓", title: "View Detection Results", text: "Get a classification, confidence score, and what it means." }] as step}
+                {#each [{ n: "01", icon: "upload", title: "Upload an Image", text: "Drag and drop, or browse for a JPG, PNG, or WEBP file." }, { n: "02", icon: "scan-search", title: "AI-Powered Analysis", text: "The model examines image characteristics and patterns." }, { n: "03", icon: "circle-check", title: "View Detection Results", text: "Get a classification, confidence score, and what it means." }] as step}
                     <article
                         class="rounded-2xl border border-indigo-500/50 bg-linear-to-br from-slate-900 to-indigo-950/40 p-6 text-center"
                     >
@@ -149,7 +150,7 @@
                             >Step {step.n}</span
                         ><span
                             class="mx-auto my-4 grid size-12 place-items-center rounded-xl bg-linear-to-br from-indigo-300 to-indigo-600 text-2xl text-white shadow-lg shadow-indigo-500/20"
-                            >{step.icon}</span
+                            ><Icon name={step.icon} /></span
                         >
                         <h3 class="font-semibold">{step.title}</h3>
                         <p class="mt-2 text-xs leading-5 text-slate-400">
@@ -162,7 +163,7 @@
 
         <section
             id="about"
-            class="scroll-reveal border-t border-indigo-500/60 px-6 py-12 md:px-16"
+            class="scroll-reveal border-t border-indigo-500/60 px-6 py-16 md:px-10 md:py-20 lg:px-16"
         >
             <div class="mb-8 text-center">
                 <h2
@@ -175,13 +176,13 @@
                 </p>
             </div>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {#each [{ icon: "⌗", title: "AI Image Detection", text: "Analyze a single image in seconds." }, { icon: "▦", title: "Confidence Score", text: "See how strongly the model favors its prediction." }, { icon: "⬡", title: "Real vs. AI Classification", text: "Likely real, likely AI-generated, or inconclusive." }, { icon: "◷", title: "Analysis History", text: "Search, filter, and revisit results." }] as feature}
+                {#each [{ icon: "scan-search", title: "AI Image Detection", text: "Analyze a single image in seconds." }, { icon: "chart-column", title: "Confidence Score", text: "See how strongly the model favors its prediction." }, { icon: "shield-check", title: "Real vs. AI Classification", text: "Likely real, likely AI-generated, or inconclusive." }, { icon: "history", title: "Analysis History", text: "Search, filter, and revisit results." }] as feature}
                     <article
                         class="rounded-2xl border border-indigo-500/50 bg-slate-950/70 p-5 text-center"
                     >
                         <span
                             class="mx-auto grid size-11 place-items-center rounded-xl bg-indigo-500 text-xl text-white"
-                            >{feature.icon}</span
+                            ><Icon name={feature.icon} /></span
                         >
                         <h3 class="mt-4 text-sm font-semibold">
                             {feature.title}
@@ -228,7 +229,7 @@
         </section>
 
         <section
-            class="scroll-reveal border-t border-indigo-500/30 px-6 py-12 md:px-16"
+            class="scroll-reveal border-t border-indigo-500/30 px-6 py-16 md:px-10 md:py-20 lg:px-16"
         >
             <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
                 <h2
@@ -300,7 +301,7 @@
 
         <section
             id="tech-stack"
-            class="scroll-reveal border-t border-indigo-500/30 px-6 py-12 md:px-16"
+            class="scroll-reveal border-t border-indigo-500/30 px-6 py-16 md:px-10 md:py-20 lg:px-16"
             aria-labelledby="tech-stack-title"
         >
             <div class="mb-8 text-center">

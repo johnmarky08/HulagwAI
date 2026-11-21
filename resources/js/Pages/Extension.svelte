@@ -2,29 +2,30 @@
     import { inertia } from "@inertiajs/svelte";
     import Layout from "./Components/Layout.svelte";
     import LoginGate from "./Components/LoginGate.svelte";
+    import Icon from "./Components/Icon.svelte";
 
     const steps = [
         {
             n: "01",
-            icon: "↓",
+            icon: "download",
             title: "Download and Extract",
             text: "Download the ZIP above and extract it to a folder you will keep. Do not select the ZIP itself when loading the extension.",
         },
         {
             n: "02",
-            icon: "⬡",
+            icon: "plug",
             title: "Load It in Your Browser",
             text: "Open brave://extensions, chrome://extensions, or edge://extensions. Turn on Developer mode, choose Load unpacked, then select the extracted folder containing manifest.json.",
         },
         {
             n: "03",
-            icon: "↔",
+            icon: "link",
             title: "Pair Your HulagwAI Account",
             text: "Click the extension icon to open its settings popup. Enter the HulagwAI site address and choose Open secure pairing page. Sign in if asked, copy the short-lived code, then paste it into the settings popup.",
         },
         {
             n: "04",
-            icon: "⌕",
+            icon: "mouse-pointer-click",
             title: "Right-Click Any Image",
             text: "Choose Scan image with HulagwAI from the context menu. Grant access to that image host if prompted, then explicitly confirm the upload.",
         },
@@ -128,7 +129,7 @@
                             href="/downloads/hulagwai-image-scanner-v0.4.5.zip"
                             download
                         >
-                            <span aria-hidden="true">↓</span> Download for Brave
+                            <Icon name="download" /> Download for Brave
                             / Chrome / Edge
                         </a>
                         <a
@@ -180,7 +181,7 @@
                             <div class="flex gap-4">
                                 <span
                                     class="grid size-11 shrink-0 place-items-center rounded-xl border border-indigo-400/30 bg-indigo-500/10 text-xl text-indigo-200"
-                                    aria-hidden="true">{step.icon}</span
+                                    aria-hidden="true"><Icon name={step.icon} /></span
                                 >
                                 <div class="pr-10">
                                     <span
@@ -236,7 +237,7 @@
                                     class="hidden items-center text-lg text-indigo-400 sm:flex"
                                     aria-hidden="true"
                                 >
-                                    →
+                                    <Icon name="arrow-right" />
                                 </li>
                             {/if}
                         {/each}
@@ -252,7 +253,7 @@
                         <li class="flex gap-3">
                             <span
                                 class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-indigo-500/15 text-xs text-indigo-300"
-                                aria-hidden="true">✓</span
+                                aria-hidden="true"><Icon name="check" strokeWidth={3} /></span
                             ><span
                                 ><b class="text-slate-200">Supported:</b> Brave,
                                 Chrome, and Edge on desktop; ordinary web images
@@ -262,7 +263,7 @@
                         <li class="flex gap-3">
                             <span
                                 class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-indigo-500/15 text-xs text-indigo-300"
-                                aria-hidden="true">✓</span
+                                aria-hidden="true"><Icon name="check" strokeWidth={3} /></span
                             ><span
                                 ><b class="text-slate-200">Account:</b> A HulagwAI
                                 account is required to pair this beta.</span
@@ -271,7 +272,7 @@
                         <li class="flex gap-3">
                             <span
                                 class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-indigo-500/15 text-xs text-indigo-300"
-                                aria-hidden="true">✓</span
+                                aria-hidden="true"><Icon name="check" strokeWidth={3} /></span
                             ><span
                                 ><b class="text-slate-200">Image limits:</b> JPG,
                                 PNG, or WEBP up to 5 MB. Protected, logged-in, or
@@ -281,7 +282,7 @@
                         <li class="flex gap-3">
                             <span
                                 class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-indigo-500/15 text-xs text-indigo-300"
-                                aria-hidden="true">✓</span
+                                aria-hidden="true"><Icon name="check" strokeWidth={3} /></span
                             ><span
                                 ><b class="text-slate-200">Privacy:</b> Only the
                                 chosen image is uploaded after confirmation. Host

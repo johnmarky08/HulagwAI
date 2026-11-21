@@ -8,6 +8,7 @@
 <script>
     import { onMount } from "svelte";
     import { cubicOut } from "svelte/easing";
+    import Icon from "./Icon.svelte";
 
     // One independent carousel: its own timer (period/offset), wheel, arrows, hover tip, and details.
     let { title, items, period = 6000, offset = 0 } = $props();
@@ -434,7 +435,7 @@
                     class="mt-5 inline-flex min-h-10 items-center rounded-xl border border-indigo-500/50 bg-indigo-950/35 px-4 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-900/50 hover:text-white"
                     href={active.link}
                     target="_blank"
-                    rel="noopener noreferrer">Official site ↗</a
+                    rel="noopener noreferrer">Official site <Icon name="external-link" class="ml-1.5" /></a
                 >
             </div>
         {/if}

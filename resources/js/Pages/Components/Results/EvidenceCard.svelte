@@ -4,6 +4,7 @@
   It deliberately never claims specific defects (e.g. "extra fingers") - the model cannot verify those.
 -->
 <script>
+    import Icon from "../Icon.svelte";
     let { evidence = null, heatmapUrl = "", showHeatmap = false, onToggleHeatmap = () => {} } = $props();
 
     const tone = {
@@ -57,7 +58,7 @@
         <div class="mt-5">
             <p class="text-xs font-semibold text-slate-400">What weakens this evidence</p>
             <ul class="mt-2 space-y-1 text-sm text-slate-300">
-                {#each limits as f, i (`${f.id}-${i}`)}<li>⚠ {f.detail}</li>{/each}
+                {#each limits as f, i (`${f.id}-${i}`)}<li class="flex items-start gap-2"><Icon name="triangle-alert" class="mt-0.5 text-amber-400" /><span>{f.detail}</span></li>{/each}
             </ul>
         </div>
     {/if}

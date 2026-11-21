@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { inertia } from "@inertiajs/svelte";
     import Layout from "./Components/Layout.svelte";
+    import Icon from "./Components/Icon.svelte";
     import {
         profile,
         loadProfile,
@@ -90,7 +91,7 @@
 
 <Layout active="">
     <main
-        class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 py-10 sm:px-8"
+        class="mx-auto min-h-[calc(100vh-80px)] max-w-7xl px-5 py-10 sm:px-8 md:py-12"
     >
         <header class="mb-6">
             <h1 class="text-3xl font-extrabold tracking-tight text-white">
@@ -105,7 +106,7 @@
                     class="inline-flex min-h-10 items-center gap-2 rounded-xl border border-indigo-500/50 bg-indigo-950/35 px-4 py-2.5 text-sm font-semibold text-indigo-200 shadow-sm shadow-indigo-950/20 transition hover:border-indigo-400 hover:bg-indigo-900/50 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                     href="/history"
                 >
-                    <span aria-hidden="true">←</span> Back to History
+                    <Icon name="arrow-left" /> Back to History
                 </a>
                 <button
                     class="inline-flex min-h-10 items-center gap-2 rounded-xl border  px-4 py-2.5 text-sm font-semibold  shadow-sm transition border-rose-500/60 bg-rose-950/35 text-rose-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400"
@@ -406,13 +407,13 @@
                         type="button"
                         class="rounded-xl border border-slate-700 bg-slate-800/70 px-5 py-3 text-sm text-slate-100 transition hover:border-indigo-400"
                         onclick={() => exportHistory("csv")}
-                        >↓ &nbsp;Export History (CSV)</button
+                        ><Icon name="download" class="mr-1.5" />Export History (CSV)</button
                     >
                     <button
                         type="button"
                         class="rounded-xl border border-slate-700 bg-slate-800/70 px-5 py-3 text-sm text-slate-100 transition hover:border-indigo-400"
                         onclick={() => exportHistory("json")}
-                        >↓ &nbsp;Export History (JSON)</button
+                        ><Icon name="download" class="mr-1.5" />Export History (JSON)</button
                     >
                     <button
                         type="button"
@@ -443,7 +444,7 @@
                     class="flex items-center gap-2 text-base font-bold text-slate-100"
                 >
                     <span class="text-lg text-rose-500" aria-hidden="true"
-                        >▤</span
+                        ><Icon name="trash-2" /></span
                     > Delete Account
                 </h2>
                 <p class="mt-4 text-sm leading-6 text-slate-400">
