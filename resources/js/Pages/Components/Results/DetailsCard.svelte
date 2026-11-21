@@ -28,7 +28,7 @@
         animated_first_frame_only:
             "Animated image: only the first frame was analyzed.",
         no_ml_model:
-            "The detection model is not installed on this server, so this result is based on file metadata only.",
+            "The detection model is not installed on this server yet. Results will rely on file metadata only.",
         provenance_declares_ai:
             "The file's embedded provenance data declares that it was AI-generated.",
     };
